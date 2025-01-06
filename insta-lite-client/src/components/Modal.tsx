@@ -6,7 +6,7 @@ interface ModalProps {
     isEditMode: boolean;
     user?: User | null;
     onClose: () => void;
-    onSubmit: (user: User) => void;
+    onSubmit: (user: User, file?: File) => void;
 }
 
 const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) => {
@@ -20,23 +20,34 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
         }
     );
     const [changePassword, setChangePassword] = useState(false);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onload = () => setImagePreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const updatedData = { ...formData };
 
-        // Chiffrement du mot de passe si nécessaire
         if (!isEditMode || (isEditMode && changePassword)) {
-            const salt = await bcrypt.genSalt(10); // Génère un sel
-            updatedData.password = await bcrypt.hash(updatedData.password, salt); // Chiffre le mot de passe
+            const salt = await bcrypt.genSalt(10);
+            updatedData.password = await bcrypt.hash(updatedData.password, salt);
         }
 
-        onSubmit(updatedData);
+        onSubmit(updatedData, selectedFile || undefined);
     };
 
     return (
@@ -95,14 +106,22 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
                         </div>
                     )}
                     <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                            Photo de profil
+                        </label>
                         <input
-                            type="text"
-                            name="profilePic"
-                            placeholder="Photo de profil (URL)"
-                            value={formData.profilePic}
-                            onChange={handleChange}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                         />
+                        {imagePreview && (
+                            <img
+                                src={imagePreview}
+                                alt="Aperçu"
+                                className="mt-4 w-full h-48 object-cover rounded-lg"
+                            />
+                        )}
                     </div>
                     <div className="mb-4">
                         <select

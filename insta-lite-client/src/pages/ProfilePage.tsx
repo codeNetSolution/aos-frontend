@@ -1,15 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getProfile, updateProfile } from '../utils/api';
+import { User } from '../types/user';
 
 const ProfilePage = () => {
-    const [name, setName] = useState('John Doe');
-    const [email, setEmail] = useState('johndoe@example.com');
+    const [profile, setProfile] = useState<User | null>(null);
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const userData = await getProfile();
+                setProfile(userData);
+            } catch (err) {
+                console.error('Erreur lors de la récupération du profil :', err);
+                setError("Impossible de récupérer le profil de l'utilisateur.");
+            }
+        };
+
+        fetchProfile();
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim() === '' || email.trim() === '') {
+        if (!profile) return;
+    
+        if (profile.username.trim() === '' || profile.email.trim() === '') {
             setError('Le nom et l’email sont obligatoires.');
             return;
         }
@@ -17,10 +34,31 @@ const ProfilePage = () => {
             setError('Le mot de passe doit contenir au moins 6 caractères.');
             return;
         }
-        setError('');
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
+    
+        try {
+            setError('');
+            const updatedProfile = { ...profile };
+            
+            
+            if (password) {
+                updatedProfile.password = password;
+            }
+    
+            const updatedUser = await updateProfile(updatedProfile);
+            setProfile(updatedUser); // Mettez à jour le profil localement
+            setPassword(''); // Réinitialiser le champ mot de passe
+            setSuccess(true);
+            setTimeout(() => setSuccess(false), 3000);
+        } catch (err) {
+            console.error('Erreur lors de la mise à jour du profil :', err);
+            setError('Une erreur est survenue lors de la mise à jour du profil.');
+        }
     };
+    
+
+    if (!profile) {
+        return <p>Chargement...</p>;
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-light">
@@ -31,13 +69,13 @@ const ProfilePage = () => {
                 <form onSubmit={handleSubmit} className="mt-6">
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-600" htmlFor="name">
-                            Nom complet
+                            Username
                         </label>
                         <input
                             type="text"
                             id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            value={profile.username}
+                            onChange={(e) => setProfile({ ...profile, username: e.target.value })}
                             className="w-full px-4 py-3 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                     </div>
@@ -48,8 +86,8 @@ const ProfilePage = () => {
                         <input
                             type="email"
                             id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={profile.email}
+                            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                             className="w-full px-4 py-3 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                     </div>

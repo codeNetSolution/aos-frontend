@@ -1,4 +1,4 @@
-import react, { Component } from 'react';
+import react, { Children, Component } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
@@ -8,39 +8,63 @@ import PrivatePortfolio from '../pages/PrivatePortfolio';
 import AdminDashboard from '../pages/AdminDashboard';
 import AdminManagement from '../pages/AdminManagement';
 import NotFoundPage from '../pages/NotFoundPage';
+import { useAuth } from '../contexts/AuthContext';
+import React from 'react';
+import SignupPage from '../pages/SignupPage';
 
-const ProtectedRoute = ({ Component: Component, role }: {
-    Component: React.ComponentType; role:String
-}) => {
-    const isAuthenticated = true;
-    const userRole = 'user';
-
-    if (!isAuthenticated){
-        return <Navigate to="/login" />;
-    }
-
-    if(role && userRole !==role) {
-        return <Navigate to ="/" />;
-    }
-
-    return <Component />;
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 };
 
 
-const AppRoutes = ({ onLogin }: { onLogin: () => void }) => (
+const AppRoutes = ()=> (
+    
     <Routes>
         {/* routes publique*/}
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage onLogin={onLogin} />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />;
         <Route path="/portfolio/public" element={<PublicPortfolio />} />
 
-        {/*routes protégés */}
-        <Route path="/profile" element={<ProtectedRoute Component={ProfilePage} role="user" />} />
-        <Route path="/portfolio/private" element={<ProtectedRoute Component={PrivatePortfolio} role="user" />} />
+        {/* Routes protégées */}
+        <Route
+            path="/profile"
+            element={
+                <ProtectedRoute>
+                    <ProfilePage />
+                </ProtectedRoute>
+            }
+        />
+        <Route
+            path="/portfolio/private"
+            element={
+                <ProtectedRoute>
+                    <PrivatePortfolio />
+                </ProtectedRoute>
+            }
+        />
 
-        {/*routes admin */}
-        <Route path="/admin/dashboard" element={<ProtectedRoute Component={AdminDashboard} role="user" />} />
-        <Route path="/admin/management" element={<ProtectedRoute Component={AdminManagement} role="user" />} />
+        {/* Routes admin */}
+        <Route
+            path="/admin/dashboard"
+            element={
+                <ProtectedRoute>
+                    <AdminDashboard />
+                </ProtectedRoute>
+            }
+        />
+        <Route
+            path="/admin/management"
+            element={
+                <ProtectedRoute>
+                    <AdminManagement />
+                </ProtectedRoute>
+            }
+        />
+
+        {/* Fallback */}
+        <Route path="*" element={<NotFoundPage />} />
 
         {/*fallback */}
         <Route path="*" element={<NotFoundPage />} />

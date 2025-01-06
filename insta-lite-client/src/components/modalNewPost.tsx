@@ -11,6 +11,7 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNewPost }) => {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [geoLocationError, setGeoLocationError] = useState<string | null>(null);
 
     if (!isOpen) return null;
 
@@ -27,14 +28,29 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNe
         }
     };
 
-    const handleVisibilityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value as 'Public' | 'Private';
-        setNewPost({ ...newPost, visibility: value });
+    const handleGetCurrentLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setNewPost({ ...newPost, location: `Lat: ${latitude}, Lng: ${longitude}` });
+                    setGeoLocationError(null);
+                },
+                (error) => {
+                    setGeoLocationError('Impossible d’obtenir votre position. Veuillez autoriser la géolocalisation.');
+                }
+            );
+        } else {
+            setGeoLocationError('La géolocalisation n’est pas prise en charge par votre navigateur.');
+        }
     };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+            <div
+                className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg"
+                style={{ maxHeight: '90vh', overflowY: 'auto' }}
+            >
                 <h2 className="text-2xl font-bold mb-4">Créer un Nouveau Post</h2>
                 <form
                     onSubmit={(e) => {
@@ -77,19 +93,28 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNe
                         )}
                     </div>
                     <div className="mb-4">
-                        <label className="block mb-2 text-sm font-medium text-gray-600">Localisation</label>
+                        <label className="block mb-2 text-sm font-medium text-gray-600">Adresse</label>
                         <input
                             type="text"
+                            placeholder="Saisissez l’adresse"
                             value={newPost.location}
                             onChange={(e) => setNewPost({ ...newPost, location: e.target.value })}
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                         />
+                        <button
+                            type="button"
+                            onClick={handleGetCurrentLocation}
+                            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                        >
+                            Utiliser ma position actuelle
+                        </button>
+                        {geoLocationError && <p className="text-red-500 text-sm mt-2">{geoLocationError}</p>}
                     </div>
                     <div className="mb-4">
                         <label className="block mb-2 text-sm font-medium text-gray-600">Visibilité</label>
                         <select
                             value={newPost.visibility}
-                            onChange={handleVisibilityChange}
+                            onChange={(e) => setNewPost({ ...newPost, visibility: e.target.value as 'Public' | 'Private' })}
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                         >
                             <option value="Public">Public</option>

@@ -7,14 +7,15 @@ const AdminManagement = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedUser, setSelectedUser] = useState<User | null>(null); // Utilisateur sélectionné pour modification
-    const [isModalOpen, setIsModalOpen] = useState(false); // Contrôle de la modal
-    const [isEditMode, setIsEditMode] = useState(false); // Mode édition ou ajout
+    const [selectedUser, setSelectedUser] = useState<User | null>(null); 
+    const [isModalOpen, setIsModalOpen] = useState(false); 
+    const [isEditMode, setIsEditMode] = useState(false); 
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
             const data = await getUsers();
+            console.log('Données récupérées:', data);
             setUsers(data);
         } catch (err: any) {
             setError("Une erreur s'est produite lors de la récupération des utilisateurs.");
@@ -27,7 +28,7 @@ const AdminManagement = () => {
         try {
             const createdUser = await createUser(user);
             setUsers((prevUsers) => [...prevUsers, createdUser]);
-            setIsModalOpen(false); // Fermer la modal
+            setIsModalOpen(false); 
         } catch (err: any) {
             setError("Erreur lors de l'ajout de l'utilisateur.");
         }
@@ -39,8 +40,9 @@ const AdminManagement = () => {
             setUsers((prevUsers) =>
                 prevUsers.map((u) => (u.id === id ? updatedUser : u))
             );
-            setIsModalOpen(false); // Fermer la modal
+            setIsModalOpen(false); 
         } catch (err: any) {
+           
             setError("Erreur lors de la mise à jour de l'utilisateur.");
         }
     };
@@ -93,6 +95,7 @@ const AdminManagement = () => {
                         <table className="min-w-full table-auto">
                             <thead className="bg-gray-200">
                                 <tr>
+                                    <th className="px-4 py-2 text-left">Photo</th>
                                     <th className="px-4 py-2 text-left">Nom d'utilisateur</th>
                                     <th className="px-4 py-2 text-left">Email</th>
                                     <th className="px-4 py-2 text-left">Rôle</th>
@@ -102,6 +105,13 @@ const AdminManagement = () => {
                             <tbody>
                                 {users.map((user) => (
                                     <tr key={user.id} className="border-t">
+                                        <td className="px-4 py-2">
+                                            <img
+                                                src={user.profilePic || 'https://via.placeholder.com/50'}
+                                                alt="Profil"
+                                                className="w-12 h-12 rounded-full"
+                                            />
+                                        </td>
                                         <td className="px-4 py-2">{user.username}</td>
                                         <td className="px-4 py-2">{user.email}</td>
                                         <td className="px-4 py-2">{user.role}</td>

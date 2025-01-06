@@ -1,28 +1,37 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import imagePhoneConnexion from '/phone_connexion.jpg';
+import { loginUser } from '../utils/api'
+import { useAuth } from '../contexts/AuthContext';
 
-interface LoginPageProps {
-    onLogin: () => void;
-}
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) {
-            setError('Veuillez remplir tous les champs.');
-            return;
+          setError('Veuillez remplir tous les champs.');
+          return;
         }
-        setError('');
-        onLogin();
-        navigate('/portfolio/private');
-        console.log({ email, password });
-    };
+        try {
+          setError('');
+          setIsLoading(true);
+          const token = await loginUser(email, password);
+          login(token); 
+          navigate('/portfolio/private');
+        } catch (err: any) {
+          setError('Identifiants incorrects ou problème de connexion');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50">

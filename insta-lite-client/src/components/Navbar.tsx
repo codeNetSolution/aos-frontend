@@ -1,12 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-interface NavBarProps {
-    isAuthenticated: boolean;
-    onLogout: () => void;
-}
-
-const NavBar: React.FC<NavBarProps> = ({ isAuthenticated, onLogout}) => {
+const NavBar: React.FC = () => {
+    const { isAuthenticated, role, logout } = useAuth();
 
     return (
         <nav className="bg-white shadow-md">
@@ -20,34 +17,43 @@ const NavBar: React.FC<NavBarProps> = ({ isAuthenticated, onLogout}) => {
                             <Link to="/profile" className="text-dark hover:underline">
                                 Profil
                             </Link>
-                            <Link
-                                to="/portfolio/private"
-                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+                            {role === 'ROLE_USER' && (
+                                <Link
+                                    to="/portfolio/private"
+                                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+                                >
+                                    Portfolio privé
+                                </Link>
+                            )}
+                            {role === 'ROLE_ADMIN' && (
+                                <>
+                                    <Link
+                                        to="/admin/dashboard"
+                                        className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+                                    >
+                                        Dashboard Admin
+                                    </Link>
+                                    <Link
+                                        to="/admin/management"
+                                        className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+                                    >
+                                        Management Admin
+                                    </Link>
+                                </>
+                            )}
+                            <button
+                                onClick={logout}
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-opacity-90"
                             >
-                                Portfolio privé
-                            </Link>
-                            <Link
-                                to="/admin/dashboard"
-                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
-                            >
-                                Dashboard Admin
-                            </Link>
-                            <Link
-                                to="/admin/management"
-                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
-                            >
-                                Management ADMIN
-                            </Link>
+                                Déconnexion
+                            </button>
                         </>
                     ) : (
                         <>
                             <Link to="/login" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">
                                 Connexion
                             </Link>
-                            <Link
-                                to="/signup"
-                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
-                            >
+                            <Link to="/signup" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">
                                 S'inscrire
                             </Link>
                         </>
