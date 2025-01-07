@@ -1,30 +1,62 @@
 import React, { useState } from 'react';
 import { PortfolioItem } from '../types/portfolio';
+import { createPublication } from '../utils/api';
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: () => void;
     newPost: Partial<PortfolioItem>;
     setNewPost: React.Dispatch<React.SetStateAction<Partial<PortfolioItem>>>;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNewPost }) => {
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost }) => {
+    const [mediaFile, setMediaFile] = useState<File | null>(null);
+    const [mediaPreview, setMediaPreview] = useState<string | null>(null);
     const [geoLocationError, setGeoLocationError] = useState<string | null>(null);
 
     if (!isOpen) return null;
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!newPost.title || !newPost.description || !mediaFile) {
+            alert('Veuillez remplir tous les champs obligatoires.');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('description', newPost.description!);
+            formData.append('type', newPost.visibility?.toLowerCase() ?? 'public');
+            formData.append('file', mediaFile.name); 
+            formData.append('image', mediaFile); 
+
+            await createPublication(formData);
+            alert('Publication créée avec succès.');
+            setNewPost({ title: '', description: '', visibility: 'public', location: '' });
+            setMediaFile(null);
+            setMediaPreview(null);
+            onClose();
+        } catch (error) {
+            console.error('Erreur lors de la création de la publication :', error);
+            alert('Une erreur s’est produite lors de la création de la publication.');
+        }
+    };
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const result = reader.result as string;
-                setImagePreview(result);
-                setNewPost({ ...newPost, imageUrl: result });
-            };
-            reader.readAsDataURL(file);
+            const mimeType = file.type;
+
+            if (mimeType.startsWith('image/') || mimeType.startsWith('video/')) {
+                setMediaFile(file);
+
+                const reader = new FileReader();
+                reader.onload = () => setMediaPreview(reader.result as string);
+                reader.readAsDataURL(file);
+            } else {
+                alert('Seuls les fichiers image ou vidéo sont autorisés.');
+            }
         }
     };
 
@@ -36,9 +68,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNe
                     setNewPost({ ...newPost, location: `Lat: ${latitude}, Lng: ${longitude}` });
                     setGeoLocationError(null);
                 },
-                (error) => {
-                    setGeoLocationError('Impossible d’obtenir votre position. Veuillez autoriser la géolocalisation.');
-                }
+                () => setGeoLocationError('Impossible d’obtenir votre position.')
             );
         } else {
             setGeoLocationError('La géolocalisation n’est pas prise en charge par votre navigateur.');
@@ -47,17 +77,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNe
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div
-                className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg"
-                style={{ maxHeight: '90vh', overflowY: 'auto' }}
-            >
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                 <h2 className="text-2xl font-bold mb-4">Créer un Nouveau Post</h2>
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        onSubmit();
-                    }}
-                >
+                <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                         <label className="block mb-2 text-sm font-medium text-gray-600">Titre</label>
                         <input
@@ -77,19 +99,21 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNe
                         ></textarea>
                     </div>
                     <div className="mb-4">
-                        <label className="block mb-2 text-sm font-medium text-gray-600">Télécharger une image</label>
+                        <label className="block mb-2 text-sm font-medium text-gray-600">Télécharger un fichier (image/vidéo)</label>
                         <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,video/*"
                             onChange={handleFileChange}
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                         />
-                        {imagePreview && (
-                            <img
-                                src={imagePreview}
-                                alt="Aperçu"
-                                className="mt-4 w-full h-48 object-cover rounded-lg"
-                            />
+                        {mediaPreview && (
+                            <div className="mt-4">
+                                {mediaFile?.type.startsWith('image/') ? (
+                                    <img src={mediaPreview} alt="Aperçu" className="w-full h-48 object-cover rounded-lg" />
+                                ) : (
+                                    <video src={mediaPreview} className="w-full h-48 object-cover rounded-lg" controls />
+                                )}
+                            </div>
                         )}
                     </div>
                     <div className="mb-4">
@@ -114,25 +138,20 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, newPost, setNe
                         <label className="block mb-2 text-sm font-medium text-gray-600">Visibilité</label>
                         <select
                             value={newPost.visibility}
-                            onChange={(e) => setNewPost({ ...newPost, visibility: e.target.value as 'Public' | 'Private' })}
+                            onChange={(e) =>
+                                setNewPost({ ...newPost, visibility: e.target.value.toLowerCase() as 'public' | 'private' })
+                            }
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                         >
-                            <option value="Public">Public</option>
-                            <option value="Private">Privé</option>
+                            <option value="public">Public</option>
+                            <option value="private">Privé</option>
                         </select>
                     </div>
                     <div className="flex justify-end">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg mr-2"
-                        >
+                        <button type="button" onClick={onClose} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg mr-2">
                             Annuler
                         </button>
-                        <button
-                            type="submit"
-                            className="bg-primary text-white px-4 py-2 rounded-lg"
-                        >
+                        <button type="submit" className="bg-primary text-white px-4 py-2 rounded-lg">
                             Publier
                         </button>
                     </div>

@@ -1,6 +1,7 @@
 {/* Gestion des appels API */}
 import axios from 'axios';
 import { User } from '../types/user';
+import {PortfolioItem } from '../types/portfolio';
 
 const api = axios.create({
     baseURL: 'http://localhost:8080', 
@@ -64,15 +65,26 @@ export const deleteUser = async (id: number) => {
     await api.delete(`/api/users/${id}`);
 };
 
-export const getProfile = async (): Promise<User> => {
-    const response = await api.get('/api/users/me');
-    return response.data;
+export const getProfile = async (email: string): Promise<User> => {
+    try {
+        const response = await api.get(`/api/users/${email}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Erreur lors de la récupération du profil pour ${email} :`, error);
+        throw error;
+    }
 };
 
-export const updateProfile = async (user: Partial<User>): Promise<User> => {
-    const response = await api.put('/api/users/me', user);
-    return response.data;
+export const updateProfile = async (email: string, user: Partial<User>): Promise<User> => {
+    try {
+        const response = await api.put(`/api/users/${email}`, user);
+        return response.data;
+    } catch (error) {
+        console.error(`Erreur lors de la mise à jour du profil pour ${email} :`, error);
+        throw error;
+    }
 };
+
 
 ///////////////////////////////// Auth ////////////////////////////////////////////
 
@@ -99,6 +111,72 @@ export const logoutUser = async ():Promise<void> => {
     });
 };
 
+//////////////////////////////////////// Like/Unlike POST ////////////////////////
+export const likePost = async (postId: number): Promise<void> => {
+    await api.post(`/api/like/${postId}`);
+};
+
+export const unlikePost = async (postId: number): Promise<void> => {
+    await api.delete(`/api/like/${postId}`);
+};
+
+
+///////////////////////////////// Publications ////////////////////////////////////////////
+
+
+export const getAllPublications = async () => {
+    const response = await api.get('/api/posts');
+    return response.data;
+};
+
+export const createPublication = async (formData: FormData) => {
+    const response = await api.post('/api/posts/create', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+};
+
+export const updatePublication = async (id: number, formData: FormData) => {
+    const response = await api.put(`/api/posts/update/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+};
+
+export const deletePublication = async (id: number) => {
+    const response = await api.delete(`/api/posts/${id}`);
+    return response.data;
+};
+
+/////////////////////// Comments /////////////////////////
+export const getAllComments = async (): Promise<Comment[]> => {
+    const response = await api.get('/api/comments');
+    return response.data;
+};
+
+export const addComment = async (postId: number, text: string): Promise<Comment> => {
+    const response = await api.post(`/api/comments/${postId}`, { text });
+    return response.data;
+};
+
+export const updateComment = async (commentId: number, text: string): Promise<Comment> => {
+    const response = await api.put(`/api/comments/${commentId}`, { text });
+    return response.data;
+};
+
+export const deleteComment = async (commentId: number): Promise<void> => {
+    await api.delete(`/api/comments/${commentId}`);
+};
+
+export const getPublicPublications = async (): Promise<PortfolioItem[]> => {
+    try {
+        const response = await api.get('/api/post-public/');
+        return response.data;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des publications publiques :", error);
+        throw error;
+    }
+};
 
 
 export default api;

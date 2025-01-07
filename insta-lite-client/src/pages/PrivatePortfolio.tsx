@@ -1,27 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PortfolioItem } from '../types/portfolio';
 import Modal from '../components/modalNewPost';
 import PostCard from '../components/PostCard';
+import { getAllPublications } from '../utils/api';
 
-const PrivatePortfolio = () => {
-    const [mockData, setMockData] = useState<PortfolioItem[]>([
-        {
-            id: 1,
-            title: 'Image 1',
-            description: 'Description de l’image 1',
-            imageUrl: 'https://via.placeholder.com/150',
-            visibility: 'Public',
-            comments: [],
-        },
-        {
-            id: 2,
-            title: 'Vidéo 1',
-            description: 'Description de la vidéo 1',
-            imageUrl: 'https://via.placeholder.com/150',
-            visibility: 'Private',
-            comments: [],
-        },
-    ]);
+const PrivatePortfolio: React.FC = () => {
+    const [posts, setPosts] = useState<PortfolioItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPost, setNewPost] = useState<Partial<PortfolioItem>>({
@@ -29,18 +15,34 @@ const PrivatePortfolio = () => {
         description: '',
         imageUrl: '',
         location: '',
-        visibility: 'Public',
+        visibility: 'public',
     });
 
     const [currentUser] = useState('karim');
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 6;
 
-    // Gestion des pages
     const indexOfLastPost = currentPage * postsPerPage;
     const indexOfFirstPost = indexOfLastPost - postsPerPage;
-    const currentPosts = mockData.slice(indexOfFirstPost, indexOfLastPost);
+    const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+
     const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                setIsLoading(true);
+                const data = await getAllPublications();
+                setPosts(data);
+            } catch {
+                setError("Erreur lors du chargement des publications.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchPosts();
+    }, []);
 
     const handleAddPost = () => {
         if (!newPost.title || !newPost.imageUrl) {
@@ -54,45 +56,43 @@ const PrivatePortfolio = () => {
             description: newPost.description || '',
             imageUrl: newPost.imageUrl!,
             location: newPost.location || '',
-            visibility: newPost.visibility as 'Public' | 'Private',
+            visibility: newPost.visibility as 'public' | 'private',
             comments: [],
         };
 
-        setMockData((prevData) => [newPostData, ...prevData]);
-        setNewPost({ title: '', description: '', imageUrl: '', location: '', visibility: 'Public' });
+        setPosts((prevPosts) => [newPostData, ...prevPosts]);
+        setNewPost({ title: '', description: '', imageUrl: '', location: '', visibility: 'public' });
         setIsModalOpen(false);
     };
 
-    const handleAddComment = (id: number, text: string) => {
-        const updatedData = mockData.map((item) =>
-            item.id === id
-                ? { ...item, comments: [...item.comments, { id: Date.now(), text, author: currentUser }] }
-                : item
-        );
-        setMockData(updatedData);
-    };
+    const handleCommentActions = (action: string, itemId: number, commentId?: number, text?: string) => {
+        const updatedPosts = posts.map((item) => {
+            if (item.id === itemId) {
+                if (action === 'add') {
+                    return {
+                        ...item,
+                        comments: [...item.comments, { id: Date.now(), text: text!, author: currentUser }],
+                    };
+                }
+                if (action === 'edit') {
+                    return {
+                        ...item,
+                        comments: item.comments.map((comment) =>
+                            comment.id === commentId ? { ...comment, text: text! } : comment
+                        ),
+                    };
+                }
+                if (action === 'delete') {
+                    return {
+                        ...item,
+                        comments: item.comments.filter((comment) => comment.id !== commentId),
+                    };
+                }
+            }
+            return item;
+        });
 
-    const handleEditComment = (itemId: number, commentId: number, newText: string) => {
-        const updatedData = mockData.map((item) =>
-            item.id === itemId
-                ? {
-                      ...item,
-                      comments: item.comments.map((comment) =>
-                          comment.id === commentId ? { ...comment, text: newText } : comment
-                      ),
-                  }
-                : item
-        );
-        setMockData(updatedData);
-    };
-
-    const handleDeleteComment = (itemId: number, commentId: number) => {
-        const updatedData = mockData.map((item) =>
-            item.id === itemId
-                ? { ...item, comments: item.comments.filter((comment) => comment.id !== commentId) }
-                : item
-        );
-        setMockData(updatedData);
+        setPosts(updatedPosts);
     };
 
     return (
@@ -108,42 +108,51 @@ const PrivatePortfolio = () => {
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                    {currentPosts.map((item) => (
-                        <PostCard
-                            key={item.id}
-                            item={item}
-                            currentUser={currentUser}
-                            handleAddComment={handleAddComment}
-                            handleEditComment={handleEditComment}
-                            handleDeleteComment={handleDeleteComment}
-                        />
-                    ))}
-                </div>
+                {isLoading ? (
+                    <div className="text-center text-gray-500">Chargement des publications...</div>
+                ) : error ? (
+                    <div className="text-center text-red-500">{error}</div>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                            {currentPosts.map((item) => (
+                                <PostCard
+                                    key={item.id}
+                                    item={item}
+                                    currentUser={currentUser}
+                                    handleAddComment={(id, text) => handleCommentActions('add', id, undefined, text)}
+                                    handleEditComment={(itemId, commentId, newText) =>
+                                        handleCommentActions('edit', itemId, commentId, newText)
+                                    }
+                                    handleDeleteComment={(itemId, commentId) =>
+                                        handleCommentActions('delete', itemId, commentId)
+                                    }
+                                />
+                            ))}
+                        </div>
 
-                {/* Pagination */}
-                <div className="flex justify-center mt-6">
-                    {Array.from({ length: Math.ceil(mockData.length / postsPerPage) }, (_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => paginate(i + 1)}
-                            className={`mx-1 px-4 py-2 rounded-lg font-medium ${
-                                currentPage === i + 1
-                                    ? 'bg-primary text-white'
-                                    : 'bg-gray-200 text-gray-600'
-                            } hover:bg-primary hover:text-white transition-colors`}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
-                </div>
+                        <div className="flex justify-center mt-6">
+                            {Array.from({ length: Math.ceil(posts.length / postsPerPage) }, (_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => paginate(i + 1)}
+                                    className={`mx-1 px-4 py-2 rounded-lg font-medium ${
+                                        currentPage === i + 1
+                                            ? 'bg-primary text-white'
+                                            : 'bg-gray-200 text-gray-600'
+                                    } hover:bg-primary hover:text-white transition-colors`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
 
-            {/* Modal for New Post */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSubmit={handleAddPost}
                 newPost={newPost}
                 setNewPost={setNewPost}
             />
