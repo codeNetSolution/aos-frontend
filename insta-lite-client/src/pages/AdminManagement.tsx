@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getUsers, createUser, updateUser, deleteUser } from '../utils/api';
 import { User } from '../types/user';
-import Modal from '../components/Modal';
+import Modal from '../components/ModalEditUser';
 
 const AdminManagement = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -139,17 +139,18 @@ const AdminManagement = () => {
 
                 {isModalOpen && (
                     <Modal
-                        isEditMode={isEditMode}
-                        user={selectedUser}
-                        onClose={() => setIsModalOpen(false)}
-                        onSubmit={(user) => {
-                            if (isEditMode && user.id) {
-                                handleUpdateUser(user.id, user);
-                            } else {
-                                handleAddUser(user);
-                            }
-                        }}
-                    />
+                    isEditMode={isEditMode}
+                    user={selectedUser}
+                    onClose={() => setIsModalOpen(false)}
+                    onSubmit={(user) => {
+                        if (isEditMode && user.id) {
+                            handleUpdateUser(user.id, user);
+                            setUsers((prevUsers) =>
+                                prevUsers.map((u) => (u.id === user.id ? user : u))
+                            );
+                        } 
+                    }}
+                />
                 )}
             </div>
         </div>

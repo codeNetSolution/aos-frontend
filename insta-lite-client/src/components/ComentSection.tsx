@@ -1,81 +1,108 @@
 import React, { useState } from 'react';
 import { PortfolioItem } from '../types/portfolio';
-import { addComment, updateComment, deleteComment } from '../utils/api';
-
+import { addComment, updateComment, deleteComment , getAllComments} from '../utils/api';
+import { Comment } from '../types/portfolio';
+import Modal from './Modal';
 interface CommentSectionProps {
     item: PortfolioItem;
     currentUser: string;
-    refreshComments: () => void;
+    comments: Comment[]; // Liste des commentaires
+    onAddComment: (text: string) => Promise<void>; // Ajout de la méthode pour ajouter un commentaire
+    onEditComment: (commentId: number, newText: string) => Promise<void>; // Ajout de la méthode pour éditer un commentaire
+    onDeleteComment: (commentId: number) => Promise<void>; // Ajout de la méthode pour supprimer un commentaire
 }
+const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, comments,
+    onAddComment,
+    onEditComment,
+    onDeleteComment,
+ }) => {
+    const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+    const [newCommentText, setNewCommentText] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // Ajouter un commentaire
+    const handleAddComment = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, refreshComments }) => {
-    const [editingComment, setEditingComment] = useState<number | null>(null);
+        if (!newCommentText.trim()) {
+            alert('Le commentaire ne peut pas être vide.');
+            return;
+        }
 
-    const handleAddComment = async (text: string) => {
         try {
-            await addComment(item.id, text);
-            refreshComments();
+            await onAddComment(newCommentText);
+            setNewCommentText(''); 
         } catch (error) {
-            console.error('Erreur lors de l\'ajout du commentaire:', error);
-            alert('Impossible d\'ajouter le commentaire.');
+            console.error('Erreur lors de l’ajout du commentaire :', error);
+            alert('Impossible d’ajouter le commentaire.');
         }
     };
 
+    // Modifier un commentaire
     const handleEditComment = async (commentId: number, newText: string) => {
+        if (!newText.trim()) {
+            alert('Le commentaire ne peut pas être vide.');
+            return;
+        }
+
         try {
             await updateComment(commentId, newText);
-            refreshComments();
-            setEditingComment(null);
+            setEditingCommentId(null); // Sortir du mode édition
         } catch (error) {
             console.error('Erreur lors de la modification du commentaire:', error);
             alert('Impossible de modifier le commentaire.');
         }
     };
 
+    // Supprimer un commentaire
     const handleDeleteComment = async (commentId: number) => {
+        if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) return;
+
         try {
             await deleteComment(commentId);
-            refreshComments();
         } catch (error) {
             console.error('Erreur lors de la suppression du commentaire:', error);
             alert('Impossible de supprimer le commentaire.');
         }
     };
 
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => setIsModalOpen(false);
+
+    const recentComments = comments.slice(-2);
+
     return (
         <div className="mt-4">
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    const text = (e.target as HTMLFormElement).elements.namedItem('comment') as HTMLInputElement;
-                    if (text.value.trim()) {
-                        handleAddComment(text.value.trim());
-                        text.value = '';
-                    } else {
-                        alert('Le commentaire ne peut pas être vide.');
-                    }
-                }}
-            >
+            {/* Formulaire pour ajouter un commentaire */}
+            <form onSubmit={handleAddComment}>
                 <input
                     type="text"
-                    name="comment"
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
                     placeholder="Ajouter un commentaire"
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <button type="submit" className="mt-2 w-full px-4 py-2 bg-primary text-white rounded-lg shadow-lg">
+                <button
+                    type="submit"
+                    className="mt-2 w-full px-4 py-2 bg-primary text-white rounded-lg shadow-lg"
+                >
                     Ajouter
                 </button>
             </form>
+
+            {/* Liste des commentaires récents */}
             <div className="mt-4">
-                {Array.isArray(item.comments) && item.comments.length > 0 ? (
-                    item.comments.map((comment) => (
-                        <div key={comment.id} className="mb-2">
-                            {editingComment === comment.id ? (
+                {recentComments.length > 0 ? (
+                    recentComments.map((comment) => (
+                        <div key={comment.id} className="mb-4 border-b pb-2">
+                            {editingCommentId === comment.id ? (
                                 <form
                                     onSubmit={(e) => {
                                         e.preventDefault();
-                                        const newText = (e.target as HTMLFormElement).elements.namedItem('editComment') as HTMLInputElement;
-                                        handleEditComment(comment.id, newText.value.trim());
+                                        const newText = (
+                                            e.target as HTMLFormElement
+                                        ).elements.namedItem('editComment') as HTMLInputElement;
+                                        onEditComment(comment.id, newText.value.trim());
                                     }}
                                 >
                                     <input
@@ -84,9 +111,21 @@ const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, refr
                                         defaultValue={comment.text}
                                         className="w-full px-2 py-1 border rounded-lg focus:outline-none"
                                     />
-                                    <button type="submit" className="ml-2 px-3 py-1 bg-primary text-white rounded-lg">
-                                        Sauvegarder
-                                    </button>
+                                    <div className="mt-2 flex space-x-2">
+                                        <button
+                                            type="submit"
+                                            className="px-3 py-1 bg-primary text-white rounded-lg"
+                                        >
+                                            Sauvegarder
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditingCommentId(null)}
+                                            className="px-3 py-1 bg-gray-300 text-black rounded-lg"
+                                        >
+                                            Annuler
+                                        </button>
+                                    </div>
                                 </form>
                             ) : (
                                 <>
@@ -96,13 +135,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, refr
                                     {comment.author === currentUser && (
                                         <div className="mt-2">
                                             <button
-                                                onClick={() => setEditingComment(comment.id)}
-                                                className="text-blue-500 hover:underline mr-2"
+                                                onClick={() => setEditingCommentId(comment.id)}
+                                                className="text-blue-500 hover:underline mr-4"
                                             >
                                                 Modifier
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteComment(comment.id)}
+                                                onClick={() => onDeleteComment(comment.id)}
                                                 className="text-red-500 hover:underline"
                                             >
                                                 Supprimer
@@ -116,10 +155,48 @@ const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, refr
                 ) : (
                     <p className="text-gray-500">Aucun commentaire pour le moment.</p>
                 )}
+
+                {comments.length > 2 && (
+                    <button
+                        onClick={handleOpenModal}
+                        className="mt-2 text-blue-500 hover:underline"
+                    >
+                        Voir tous les commentaires
+                    </button>
+                )}
             </div>
+
+            {/* Modal pour afficher tous les commentaires */}
+            {isModalOpen && (
+                <Modal onClose={handleCloseModal}>
+                    <h2 className="text-lg font-bold mb-4">Tous les commentaires</h2>
+                    {comments.map((comment) => (
+                        <div key={comment.id} className="mb-4 border-b pb-2">
+                            <p>
+                                <strong>{comment.author}:</strong> {comment.text}
+                            </p>
+                            {comment.author === currentUser && (
+                                <div className="mt-2">
+                                    <button
+                                        onClick={() => setEditingCommentId(comment.id)}
+                                        className="text-blue-500 hover:underline mr-4"
+                                    >
+                                        Modifier
+                                    </button>
+                                    <button
+                                        onClick={() => onDeleteComment(comment.id)}
+                                        className="text-red-500 hover:underline"
+                                    >
+                                        Supprimer
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </Modal>
+            )}
         </div>
     );
-    
 };
 
 export default CommentSection;

@@ -8,7 +8,6 @@ const PrivatePortfolio: React.FC = () => {
     const [posts, setPosts] = useState<PortfolioItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPost, setNewPost] = useState<Partial<PortfolioItem>>({
         title: '',
@@ -43,6 +42,10 @@ const PrivatePortfolio: React.FC = () => {
 
         fetchPosts();
     }, []);
+
+    const addPost = (newPost: PortfolioItem) => {
+        setPosts((prevPosts) => [newPost, ...prevPosts]);
+    };
 
     const handleAddPost = () => {
         if (!newPost.title || !newPost.imageUrl) {
@@ -120,13 +123,6 @@ const PrivatePortfolio: React.FC = () => {
                                     key={item.id}
                                     item={item}
                                     currentUser={currentUser}
-                                    handleAddComment={(id, text) => handleCommentActions('add', id, undefined, text)}
-                                    handleEditComment={(itemId, commentId, newText) =>
-                                        handleCommentActions('edit', itemId, commentId, newText)
-                                    }
-                                    handleDeleteComment={(itemId, commentId) =>
-                                        handleCommentActions('delete', itemId, commentId)
-                                    }
                                 />
                             ))}
                         </div>
@@ -155,6 +151,7 @@ const PrivatePortfolio: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 newPost={newPost}
                 setNewPost={setNewPost}
+                addPost={addPost}
             />
         </div>
     );

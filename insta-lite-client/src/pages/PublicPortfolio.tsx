@@ -53,7 +53,7 @@ const PublicPortfolio: React.FC = () => {
                                 <PostCard
                                     key={item.id}
                                     item={item}
-                                    currentUser="guest" // Utilisateur invité
+                                    currentUser="guest" 
                                     handleAddComment={() => {}}
                                     handleEditComment={() => {}}
                                     handleDeleteComment={() => {}}

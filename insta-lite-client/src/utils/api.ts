@@ -112,12 +112,22 @@ export const logoutUser = async ():Promise<void> => {
 };
 
 //////////////////////////////////////// Like/Unlike POST ////////////////////////
-export const likePost = async (postId: number): Promise<void> => {
-    await api.post(`/api/like/${postId}`);
+export const likePost = async (postId: number): Promise<{ nbLike: number }> => {
+    const response = await api.post(`/api/like/${postId}`, {}, {
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+    });
+    return response.data; // Assurez-vous que le backend renvoie le nombre de likes mis à jour
 };
 
-export const unlikePost = async (postId: number): Promise<void> => {
-    await api.delete(`/api/like/${postId}`);
+export const unlikePost = async (postId: number): Promise<{ nbLike: number }> => {
+    const response = await api.delete(`/api/like/${postId}`, {
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+    });
+    return response.data; // Idem pour unlike
 };
 
 
@@ -148,20 +158,30 @@ export const deletePublication = async (id: number) => {
     return response.data;
 };
 
+export const getPublicationById = async (id: number): Promise<PortfolioItem> => {
+    try {
+        const response = await api.get(`/api/posts/${id}`);
+        return response.data; // Retourne la publication spécifique
+    } catch (error) {
+        console.error(`Erreur lors de la récupération de la publication avec l'id ${id} :`, error);
+        throw error;
+    }
+};
+
 /////////////////////// Comments /////////////////////////
 export const getAllComments = async (): Promise<Comment[]> => {
     const response = await api.get('/api/comments');
     return response.data;
 };
 
-export const addComment = async (postId: number, text: string): Promise<Comment> => {
+export const addComment = async (postId: number, text: string): Promise<any> => {
     const response = await api.post(`/api/comments/${postId}`, { text });
     return response.data;
 };
 
-export const updateComment = async (commentId: number, text: string): Promise<Comment> => {
+export const updateComment = async (commentId: number, text: string): Promise<any> => {
     const response = await api.put(`/api/comments/${commentId}`, { text });
-    return response.data;
+    return response.data as Comment;
 };
 
 export const deleteComment = async (commentId: number): Promise<void> => {

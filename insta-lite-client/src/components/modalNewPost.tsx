@@ -7,9 +7,10 @@ interface ModalProps {
     onClose: () => void;
     newPost: Partial<PortfolioItem>;
     setNewPost: React.Dispatch<React.SetStateAction<Partial<PortfolioItem>>>;
+    addPost: (post: PortfolioItem) => void;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, addPost }) => {
     const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
     const [geoLocationError, setGeoLocationError] = useState<string | null>(null);
@@ -32,7 +33,18 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost }) =
             formData.append('image', mediaFile); 
 
             await createPublication(formData);
-            alert('Publication créée avec succès.');
+
+            const createdPost: PortfolioItem = {
+                id: Date.now(),
+                title: newPost.title!,
+                description: newPost.description!,
+                imageUrl: URL.createObjectURL(mediaFile), // Utilisez un objet temporaire pour l'aperçu
+                location: newPost.location || '',
+                visibility: newPost.visibility as 'public' | 'private',
+                comments: [],
+            };
+            addPost(createdPost);
+            
             setNewPost({ title: '', description: '', visibility: 'public', location: '' });
             setMediaFile(null);
             setMediaPreview(null);
