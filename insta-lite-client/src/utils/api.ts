@@ -65,25 +65,26 @@ export const deleteUser = async (id: number) => {
     await api.delete(`/api/users/${id}`);
 };
 
-export const getProfile = async (email: string): Promise<User> => {
+export const getProfile = async (): Promise<User> => {
     try {
-        const response = await api.get(`/api/users/${email}`);
+        const response = await api.get('/api/auth/profile');
         return response.data;
     } catch (error) {
-        console.error(`Erreur lors de la récupération du profil pour ${email} :`, error);
+        console.error("Erreur lors de la récupération du profil :", error);
         throw error;
     }
 };
 
-export const updateProfile = async (email: string, user: Partial<User>): Promise<User> => {
+export const updateProfile = async (user: Partial<User>): Promise<User> => {
     try {
-        const response = await api.put(`/api/users/${email}`, user);
+        const response = await api.put('/api/auth/profile', user);
         return response.data;
     } catch (error) {
-        console.error(`Erreur lors de la mise à jour du profil pour ${email} :`, error);
+        console.error('Erreur lors de la mise à jour du profil :', error);
         throw error;
     }
 };
+
 
 
 ///////////////////////////////// Auth ////////////////////////////////////////////

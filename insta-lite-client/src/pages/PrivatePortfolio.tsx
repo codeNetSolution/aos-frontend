@@ -3,6 +3,8 @@ import { PortfolioItem } from '../types/portfolio';
 import Modal from '../components/modalNewPost';
 import PostCard from '../components/PostCard';
 import { getAllPublications,deletePublication, updatePublication  } from '../utils/api';
+import { getRole } from '../utils/auth';
+
 
 const PrivatePortfolio: React.FC = () => {
     const [posts, setPosts] = useState<PortfolioItem[]>([]);
@@ -16,7 +18,7 @@ const PrivatePortfolio: React.FC = () => {
         location: '',
         visibility: 'public',
     });
-
+    const [isPremium, setIsPremium] = useState(false);
     
     const [currentUser] = useState('saidoabd');
     const [currentPage, setCurrentPage] = useState(1);
@@ -43,6 +45,20 @@ const PrivatePortfolio: React.FC = () => {
 
         fetchPosts();
     }, []);
+
+
+useEffect(() => {
+    const fetchUserInfo = async () => {
+        try {
+            const userInfo = await getRole();
+            setIsPremium(userInfo === 'ROLE_PREMIUM');
+        } catch (error) {
+            console.error('Erreur lors de la récupération des informations utilisateur :', error);
+        }
+    };
+
+    fetchUserInfo();
+}, []);
 
     const addPost = (newPost: PortfolioItem) => {
         setPosts((prevPosts) => [newPost, ...prevPosts]);
@@ -129,6 +145,7 @@ const PrivatePortfolio: React.FC = () => {
                                     key={item.id}
                                     item={item}
                                     currentUser={currentUser}
+                                    isPremium={isPremium}
                                     onDeletePost={handleDeletePost}
                                     onEditPost={handleEditPost}
                                 />

@@ -10,6 +10,7 @@ import { likePost, unlikePost, addComment, updateComment, deleteComment, getAllC
 interface PostCardProps {
     item: PortfolioItem;
     currentUser: string;
+    isPremium: boolean;
     onDeletePost: (id: number) => void;
     onEditPost: (id: number, updatedPost: Partial<PortfolioItem>) => void;
 }
@@ -228,6 +229,7 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
                     <CommentSection
                         item={item}
                         currentUser={currentUser}
+                        isPremium={isPremium}
                         comments={comments}
                         onAddComment={handleAddComment}
                         onEditComment={handleEditComment}

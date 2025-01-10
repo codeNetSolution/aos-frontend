@@ -10,34 +10,23 @@ const ProfilePage = () => {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const email = localStorage.getItem('userEmail');
-            if (!email) {
-                setError("Impossible de récupérer l'email de l'utilisateur.");
-                return;
-            }
-
             try {
-                const userData = await getProfile(email);
+                const userData = await getProfile(); 
                 setProfile(userData);
             } catch (err) {
                 console.error('Erreur lors de la récupération du profil :', err);
                 setError("Impossible de récupérer le profil de l'utilisateur.");
             }
         };
-
+    
         fetchProfile();
     }, []);
+    
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!profile) return;
-
-        const email = localStorage.getItem('userEmail'); 
-        if (!email) {
-            setError("Impossible de récupérer l'email de l'utilisateur.");
-            return;
-        }
-
+    
         if (profile.username.trim() === '' || profile.email.trim() === '') {
             setError('Le nom et l’email sont obligatoires.');
             return;
@@ -46,16 +35,16 @@ const ProfilePage = () => {
             setError('Le mot de passe doit contenir au moins 6 caractères.');
             return;
         }
-
+    
         try {
             setError('');
             const updatedProfile = { ...profile };
-
+    
             if (password) {
                 updatedProfile.password = password;
             }
-
-            const updatedUser = await updateProfile(email, updatedProfile);
+    
+            const updatedUser = await updateProfile(updatedProfile); // Appel de l'API
             setProfile(updatedUser); 
             setPassword(''); 
             setSuccess(true);
@@ -65,6 +54,7 @@ const ProfilePage = () => {
             setError('Une erreur est survenue lors de la mise à jour du profil.');
         }
     };
+    
     
 
     if (!profile) {

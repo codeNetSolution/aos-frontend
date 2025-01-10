@@ -5,12 +5,15 @@ import Modal from './Modal';
 interface CommentSectionProps {
     item: PortfolioItem;
     currentUser: string;
+    isPremium: boolean;
     comments: Comment[]; 
     onAddComment: (text: string) => Promise<void>;
     onEditComment: (commentId: number, newText: string) => Promise<void>;
     onDeleteComment: (commentId: number) => Promise<void>; 
 }
-const CommentSection: React.FC<CommentSectionProps> = ({currentUser, comments,
+const CommentSection: React.FC<CommentSectionProps> = ({currentUser,
+    isPremium,
+    comments,
     onAddComment,
     onEditComment,
     onDeleteComment,
@@ -146,7 +149,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({currentUser, comments,
                             <p>
                                 <strong>{comment.author}:</strong> {comment.text}
                             </p>
-                            {comment.author === currentUser && (
+                            {isPremium && comment.author === currentUser && (
                                 <div className="mt-2">
                                     <button
                                         onClick={() => setEditingCommentId(comment.id)}
