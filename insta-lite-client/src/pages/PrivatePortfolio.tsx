@@ -4,9 +4,12 @@ import Modal from '../components/modalNewPost';
 import PostCard from '../components/PostCard';
 import { getAllPublications,deletePublication, updatePublication  } from '../utils/api';
 import { getRole, getUsernameProfile } from '../utils/auth';
-
+import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
 
 const PrivatePortfolio: React.FC = () => {
+    const { role } = useAuth();
+    const isAdmin = role === 'ROLE_ADMIN';
     const [posts, setPosts] = useState<PortfolioItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -38,6 +41,11 @@ const PrivatePortfolio: React.FC = () => {
                 setPosts(data);
             } catch {
                 setError("Erreur lors du chargement des publications.");
+                toast.error('🚫 Erreur lors du chargement des publications.', {
+                    position: 'top-right',
+                    autoClose: 3000,
+                    theme: 'colored',
+                });
             } finally {
                 setIsLoading(false);
             }
@@ -53,7 +61,11 @@ useEffect(() => {
             const userInfo = getRole();
             setIsPremium(userInfo === 'ROLE_PREMIUM');
         } catch (error) {
-            console.error('Erreur lors de la récupération des informations utilisateur :', error);
+            toast.error('⚠️ Impossible de récupérer les informations utilisateur.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
     };
 
@@ -62,6 +74,11 @@ useEffect(() => {
 
     const addPost = (newPost: PortfolioItem) => {
         setPosts((prevPosts) => [newPost, ...prevPosts]);
+        toast.success('🎉 Nouvelle publication ajoutée avec succès !', {
+            position: 'top-right',
+            autoClose: 3000,
+            theme: 'colored',
+        });
     };
 
     const convertToFormData = (data: {
@@ -100,9 +117,17 @@ useEffect(() => {
                     post.id === postId ? { ...post, ...updatedData } : post
                 )
             );
+            toast.info('✏️ Publication mise à jour avec succès !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         } catch (error) {
-            console.error("Erreur lors de la modification de la publication :", error);
-            alert("Une erreur est survenue lors de la modification de la publication.");
+            toast.error('❌ Une erreur est survenue lors de la mise à jour.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
     };
     
@@ -114,9 +139,17 @@ useEffect(() => {
         try {
             await deletePublication(postId); 
             setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+            toast.success('🗑️ Publication supprimée avec succès !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         } catch (error) {
-            console.error("Erreur lors de la suppression de la publication :", error);
-            alert("Une erreur est survenue lors de la suppression de la publication.");
+            toast.error('❌ Une erreur est survenue lors de la suppression.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
     };
 
@@ -125,12 +158,14 @@ useEffect(() => {
             <div className="container mx-auto py-8 px-4">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-4xl font-extrabold text-gray-800">Portfolio Privé</h1>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-primary text-white px-6 py-2 rounded-lg shadow-lg hover:bg-opacity-90"
-                    >
-                        Nouveau Post
-                    </button>
+                    {isAdmin && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="bg-primary text-white px-6 py-2 rounded-lg shadow-lg hover:bg-opacity-90"
+                        >
+                            Nouveau Post
+                        </button>
+                    )}
                 </div>
 
                 {isLoading ? (
@@ -144,7 +179,7 @@ useEffect(() => {
                                 <PostCard
                                     key={item.id}
                                     item={item}
-                                    currentUser={currentUser}
+                                    currentUser={currentUser as string}
                                     isPremium={isPremium}
                                     onDeletePost={handleDeletePost}
                                     onEditPost={handleEditPost}

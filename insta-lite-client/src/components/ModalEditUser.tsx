@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../types/user';
 import bcrypt from 'bcryptjs';
+import { toast } from 'react-toastify';
 
 interface ModalProps {
     isEditMode: boolean;
@@ -54,17 +55,30 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
         e.preventDefault();
         const updatedData = { ...formData };
     
-        if (!isEditMode || (isEditMode && changePassword)) {
-            const salt = await bcrypt.genSalt(10);
-            updatedData.password = await bcrypt.hash(updatedData.password, salt);
+        try {
+            if (!isEditMode || (isEditMode && changePassword)) {
+                const salt = await bcrypt.genSalt(10);
+                updatedData.password = await bcrypt.hash(updatedData.password, salt);
+            }
+        
+            if (selectedFile) {
+                updatedData.profilePic = selectedFile.name;
+            }
+            onSubmit(updatedData, selectedFile || undefined);
+            toast.success(`✅ Utilisateur ${isEditMode ? 'modifié' : 'ajouté'} avec succès !`, {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
+        } catch (err){
+            toast.error('❌ Une erreur est survenue lors de la soumission.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
-    
-        if (selectedFile) {
-            updatedData.profilePic = selectedFile.name;
-        }
-    
-        console.log('Submitting data:', updatedData, selectedFile);
-        onSubmit(updatedData, selectedFile || undefined);
+        
+
     };
 
     return (

@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { PortfolioItem } from '../types/portfolio';
 import { Comment } from '../types/portfolio';
 import Modal from './Modal';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
+
 interface CommentSectionProps {
     item: PortfolioItem;
     currentUser: string;
@@ -12,12 +15,14 @@ interface CommentSectionProps {
     onDeleteComment: (commentId: number) => Promise<void>; 
 }
 const CommentSection: React.FC<CommentSectionProps> = ({currentUser,
-    isPremium,
     comments,
     onAddComment,
     onEditComment,
     onDeleteComment,
  }) => {
+    const { role } = useAuth();
+    const isAdmin = role === 'ROLE_ADMIN';
+
     const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
     const [newCommentText, setNewCommentText] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,15 +31,25 @@ const CommentSection: React.FC<CommentSectionProps> = ({currentUser,
         e.preventDefault();
 
         if (!newCommentText.trim()) {
-            alert('Le commentaire ne peut pas être vide.');
+            toast.warn('⚠️ Le commentaire ne peut pas être vide.', {
+                position: 'top-right',
+                theme: 'colored',
+            });
             return;
         }
 
         try {
             await onAddComment(newCommentText);
-            setNewCommentText(''); 
+            setNewCommentText('');
+            toast.success('💬 Commentaire ajouté avec succès !', {
+                position: 'top-right',
+                theme: 'colored',
+            });
         } catch (error) {
-            console.error('Erreur lors de l’ajout du commentaire :', error);
+            toast.error('❌ Impossible d’ajouter le commentaire.', {
+                position: 'top-right',
+                theme: 'colored',
+            });            
             alert('Impossible d’ajouter le commentaire.');
         }
     };
@@ -105,7 +120,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({currentUser,
                                     <p className="text-sm text-gray-600">
                                         <strong>{comment.author}:</strong> {comment.text}
                                     </p>
-                                    {comment.author === currentUser && (
+                                    {(isAdmin || comment.author === currentUser) && (
                                         <div className="mt-2">
                                             <button
                                                 onClick={() => setEditingCommentId(comment.id)}
@@ -148,7 +163,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({currentUser,
                             <p>
                                 <strong>{comment.author}:</strong> {comment.text}
                             </p>
-                            {isPremium && comment.author === currentUser && (
+                            {isAdmin || comment.author === currentUser && (
                                 <div className="mt-2">
                                     <button
                                         onClick={() => setEditingCommentId(comment.id)}

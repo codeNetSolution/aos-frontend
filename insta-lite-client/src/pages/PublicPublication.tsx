@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { PortfolioItem } from '../types/portfolio';
-import PostCard from '../components/PostCard';
 import { getPublicationsPublic } from '../utils/api';
-import { getUsernameProfile } from '../utils/auth';
+import PostCardPublic from '../components/PostCardPublique';
 import { toast } from 'react-toastify';
 
-const PublicPortfolio: React.FC = () => {
+const PublicPublication: React.FC = () => {
     const [posts, setPosts] = useState<PortfolioItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const currentUser = getUsernameProfile();
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 6;
     const indexOfLastPost = currentPage * postsPerPage;
@@ -26,7 +24,7 @@ const PublicPortfolio: React.FC = () => {
                 const data = await getPublicationsPublic();
                 setPosts(data);
             } catch {
-                toast.error('❌ Erreur lors de la récupération du profil.', { position: 'top-right', theme: 'colored' });
+                toast.error('❌ Erreur lors de la récupération du profil.', { position: 'top-right', theme: 'colored' });                
                 setError("Erreur lors du chargement des publications.");
             } finally {
                 setIsLoading(false);
@@ -52,13 +50,9 @@ const PublicPortfolio: React.FC = () => {
                     <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                             {currentPosts.map((item) => (
-                                <PostCard
+                                <PostCardPublic
                                     key={item.id}
                                     item={item}
-                                    currentUser={currentUser as string}
-                                    isPremium={false}
-                                    onDeletePost={() => {}}
-                                    onEditPost={() => {}}
                                 />
                             ))}
                         </div>
@@ -85,4 +79,4 @@ const PublicPortfolio: React.FC = () => {
     );
 };
 
-export default PublicPortfolio;
+export default PublicPublication;

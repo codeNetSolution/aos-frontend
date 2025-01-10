@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getProfile, updateProfile } from '../utils/api';
 import { User } from '../types/user';
+import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
     const [profile, setProfile] = useState<User | null>(null);
@@ -14,7 +15,7 @@ const ProfilePage = () => {
                 const userData = await getProfile(); 
                 setProfile(userData);
             } catch (err) {
-                console.error('Erreur lors de la récupération du profil :', err);
+                toast.error('❌ Erreur lors de la récupération du profil.', { position: 'top-right', theme: 'colored' });
                 setError("Impossible de récupérer le profil de l'utilisateur.");
             }
         };
@@ -29,10 +30,12 @@ const ProfilePage = () => {
     
         if (profile.username.trim() === '' || profile.email.trim() === '') {
             setError('Le nom et l’email sont obligatoires.');
+            toast.warn('⚠️ Le nom et l’email sont obligatoires.', { position: 'top-right', theme: 'colored' });
             return;
         }
         if (password && password.length < 6) {
             setError('Le mot de passe doit contenir au moins 6 caractères.');
+            toast.warn('⚠️ Le mot de passe doit contenir au moins 6 caractères.', { position: 'top-right', theme: 'colored' });
             return;
         }
     
@@ -44,13 +47,14 @@ const ProfilePage = () => {
                 updatedProfile.password = password;
             }
     
-            const updatedUser = await updateProfile(updatedProfile); // Appel de l'API
+            const updatedUser = await updateProfile(updatedProfile);
             setProfile(updatedUser); 
             setPassword(''); 
+            toast.success('✅ Profil mis à jour avec succès !', { position: 'top-right', theme: 'colored' });
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         } catch (err) {
-            console.error('Erreur lors de la mise à jour du profil :', err);
+            toast.error('❌ Erreur lors de la mise à jour du profil.', { position: 'top-right', theme: 'colored' });
             setError('Une erreur est survenue lors de la mise à jour du profil.');
         }
     };

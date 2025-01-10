@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getAdminStats, getRecentActivities } from '../utils/api';
 import { Doughnut } from 'react-chartjs-2';
+import { toast } from 'react-toastify';
 import {
     Chart as ChartJS,
     ArcElement,
@@ -54,6 +55,7 @@ const AdminDashboard: React.FC = () => {
                 setActivities(recentActivities);
             } catch (err) {
                 setError('Erreur lors du chargement des données.');
+                toast.error('Erreur lors du chargement des données.', { position: 'top-right', theme: 'colored' });
             } finally {
                 setIsLoading(false);
             }

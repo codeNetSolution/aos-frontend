@@ -52,8 +52,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     useEffect(() => {
         checkTokenExpiration();
-
-        // Vérifier toutes les 5 secondes
         const interval = setInterval(() => {
             checkTokenExpiration();
         }, 5000);

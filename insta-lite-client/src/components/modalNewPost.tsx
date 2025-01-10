@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { PortfolioItem } from '../types/portfolio';
 import { createPublication } from '../utils/api';
+import imageCompression from 'browser-image-compression';
+import { toast } from 'react-toastify';
 
 interface ModalProps {
     isOpen: boolean;
@@ -13,7 +15,6 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, addPost }) => {
     const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-    const [geoLocationError, setGeoLocationError] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<string | null>(null); 
 
     if (!isOpen) return null;
@@ -22,7 +23,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, add
         e.preventDefault();
 
         if (!newPost.description || !newPost.visibility || !mediaFile) {
-            alert('Veuillez remplir tous les champs obligatoires.');
+            toast.warn('⚠️ Veuillez remplir tous les champs obligatoires.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });            
             return;
         }
 
@@ -48,31 +53,83 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, add
             setNewPost({ title: '', description: '', visibility: 'public', location: '' });
             setMediaFile(null);
             setMediaPreview(null);
+            toast.success('✅ Publication créée avec succès !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
+            
             onClose();
         } catch (error) {
-            console.error('Erreur lors de la création de la publication :', error);
+            toast.error('❌ Une erreur est survenue lors de la création de la publication.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });        
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const mimeType = file.type;
+            const fileSize = file.size;
+            const MAX_IMAGE_SIZE = 2 * 1024 * 1024; 
+            const MAX_VIDEO_SIZE = 30 * 1024 * 1024; 
 
             if (mimeType.startsWith('image/')) {
                 setMediaType('IMAGE');
+                if (fileSize > MAX_IMAGE_SIZE) {
+                    try {
+                        const compressedImage = await imageCompression(file, { maxSizeMB: 2 });
+                        setMediaFile(compressedImage);
+                        const reader = new FileReader();
+                        reader.onload = () => setMediaPreview(reader.result as string);
+                        reader.readAsDataURL(compressedImage);
+                        toast.info('📸 Image compressée avec succès.', {
+                            position: 'top-right',
+                            autoClose: 3000,
+                            theme: 'colored',
+                        });
+                    } catch (error) {
+                        toast.error('❌ Erreur lors de la compression de l’image.', {
+                            position: 'top-right',
+                            autoClose: 3000,
+                            theme: 'colored',
+                        });                    
+                    }
+                } else {
+                    setMediaFile(file);
+                    const reader = new FileReader();
+                    reader.onload = () => setMediaPreview(reader.result as string);
+                    reader.readAsDataURL(file);
+                }
             } else if (mimeType.startsWith('video/')) {
                 setMediaType('VIDEO');
+                if (fileSize > MAX_VIDEO_SIZE) {
+                    toast.warn('⚠️ La taille de la vidéo dépasse 30 Mo.', {
+                        position: 'top-right',
+                        autoClose: 3000,
+                        theme: 'colored',
+                    });                
+                } else {
+                    setMediaFile(file);
+                    const reader = new FileReader();
+                    reader.onload = () => setMediaPreview(reader.result as string);
+                    reader.readAsDataURL(file);
+                    toast.info('🎥 Vidéo chargée avec succès.', {
+                        position: 'top-right',
+                        autoClose: 3000,
+                        theme: 'colored',
+                    });
+                }
             } else {
-                alert('Seuls les fichiers image ou vidéo sont autorisés.');
-                return;
+                toast.error('❌ Seuls les fichiers image ou vidéo sont autorisés.', {
+                    position: 'top-right',
+                    autoClose: 3000,
+                    theme: 'colored',
+                });            
             }
-
-            setMediaFile(file);
-
-            const reader = new FileReader();
-            reader.onload = () => setMediaPreview(reader.result as string);
-            reader.readAsDataURL(file);
         }
     };
 

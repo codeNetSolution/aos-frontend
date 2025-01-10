@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { getUsers, createUser, updateUser, deleteUser } from '../utils/api';
 import { User } from '../types/user';
 import Modal from '../components/ModalEditUser';
+import { toast } from 'react-toastify';
+
+import imageProfil from '../../public/icon_profile.png';
+
 
 const AdminManagement = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -18,6 +22,7 @@ const AdminManagement = () => {
             console.log('Données récupérées:', data);
             setUsers(data);
         } catch (err: any) {
+            toast.error("Erreur lors de la récupération des utilisateurs.", { position: 'top-right', theme: 'colored' });
             setError("Une erreur s'est produite lors de la récupération des utilisateurs.");
         } finally {
             setLoading(false);
@@ -29,8 +34,10 @@ const AdminManagement = () => {
             const createdUser = await createUser(user);
             setUsers((prevUsers) => [...prevUsers, createdUser]);
             setIsModalOpen(false); 
+            toast.success('Utilisateur ajouté avec succès !', { position: 'top-right', theme: 'colored' });
         } catch (err: any) {
             setError("Erreur lors de l'ajout de l'utilisateur.");
+            toast.error("Impossible d'ajouter l'utilisateur.", { position: 'top-right', theme: 'colored' });
         }
     };
 
@@ -41,8 +48,9 @@ const AdminManagement = () => {
                 prevUsers.map((u) => (u.id === id ? updatedUser : u))
             );
             setIsModalOpen(false); 
+            toast.info('Utilisateur mis à jour avec succès !', { position: 'top-right', theme: 'colored' });
         } catch (err: any) {
-           
+            toast.error("Impossible de mettre à jour l'utilisateur.", { position: 'top-right', theme: 'colored' });
             setError("Erreur lors de la mise à jour de l'utilisateur.");
         }
     };
@@ -51,7 +59,9 @@ const AdminManagement = () => {
         try {
             await deleteUser(id);
             setUsers((prevUsers) => prevUsers.filter((u) => u.id !== id));
+            toast.success('Utilisateur supprimé avec succès !', { position: 'top-right', theme: 'colored' });
         } catch (err: any) {
+            toast.error("Impossible de supprimer l'utilisateur.", { position: 'top-right', theme: 'colored' });
             setError("Erreur lors de la suppression de l'utilisateur.");
         }
     };
@@ -107,7 +117,7 @@ const AdminManagement = () => {
                                     <tr key={user.id} className="border-t">
                                         <td className="px-4 py-2">
                                             <img
-                                                src={user.profilePic || 'https://via.placeholder.com/50'}
+                                                src={imageProfil}
                                                 alt="Profil"
                                                 className="w-12 h-12 rounded-full"
                                             />

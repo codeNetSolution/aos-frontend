@@ -1,5 +1,4 @@
-import react, { Children, Component } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import ProfilePage from '../pages/ProfilePage';
@@ -8,14 +7,11 @@ import PrivatePortfolio from '../pages/PrivatePortfolio';
 import AdminDashboard from '../pages/AdminDashboard';
 import AdminManagement from '../pages/AdminManagement';
 import NotFoundPage from '../pages/NotFoundPage';
-import { useAuth } from '../contexts/AuthContext';
-import React from 'react';
 import SignupPage from '../pages/SignupPage';
+import ProtectedRoute from './RoleProtectedRouteProps';
+import PublicPublication from '../pages/PublicPublication';
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { isAuthenticated } = useAuth();
-    return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
+
 
 
 const AppRoutes = ()=> (
@@ -25,13 +21,22 @@ const AppRoutes = ()=> (
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />;
-        <Route path="/portfolio/public" element={<PublicPortfolio />} />
+        <Route path="/discover" element={<PublicPublication />} />
 
         {/* Routes protégées */}
         <Route
+            path="/portfolio/public"
+            element={
+                <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_USER', 'ROLE_PREMIUM']}>
+                    <ProfilePage />
+                </ProtectedRoute>
+            }
+        />
+
+        <Route
             path="/profile"
             element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_USER', 'ROLE_PREMIUM']}>
                     <ProfilePage />
                 </ProtectedRoute>
             }
@@ -39,7 +44,7 @@ const AppRoutes = ()=> (
         <Route
             path="/portfolio/private"
             element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['ROLE_PREMIUM', 'ROLE_ADMIN']}>
                     <PrivatePortfolio />
                 </ProtectedRoute>
             }
@@ -49,7 +54,7 @@ const AppRoutes = ()=> (
         <Route
             path="/admin/dashboard"
             element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
                     <AdminDashboard />
                 </ProtectedRoute>
             }
@@ -57,7 +62,7 @@ const AppRoutes = ()=> (
         <Route
             path="/admin/management"
             element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
                     <AdminManagement />
                 </ProtectedRoute>
             }

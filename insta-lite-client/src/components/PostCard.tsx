@@ -5,7 +5,8 @@ import { PortfolioItem, Comment } from '../types/portfolio';
 import { likePost, unlikePost, addComment, updateComment, deleteComment, getAllComments, getPublicMedia,
     getPrivateMedia 
  } from '../utils/api';
-
+ import { useAuth } from '../contexts/AuthContext';
+ import { toast } from 'react-toastify';
 
 interface PostCardProps {
     item: PortfolioItem;
@@ -16,6 +17,7 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, onEditPost, isPremium }) => {
+    const { role } = useAuth();
     const [likes, setLikes] = useState(item.nbLike || 0);
     const [isLiked, setIsLiked] = useState(false);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -39,6 +41,7 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
                 setMediaUrl(url);
             } catch (error) {
                 console.error('Error fetching media:', error);
+                toast.error("Erreur lors du chargement des médias.", { position: "top-right" });
             }
         };
 
@@ -61,9 +64,18 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
             await likePost(item.id);
             setLikes((prevLikes) => prevLikes + 1); 
             setIsLiked(true); 
+            toast.success('🌟 Super ! Vous aimez cette photo !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         } catch (error) {
             console.error('Error liking post:', error);
-            alert('An error occurred while liking the post.');
+            toast.error("😢 Impossible d'aimer cette photo pour le moment.", {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
     };
 
@@ -74,9 +86,21 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
             await unlikePost(item.id);
             setLikes((prevLikes) => Math.max(prevLikes - 1, 0));
             setIsLiked(false);
-        } catch (error) {
+            toast.info('💔 Vous avez changé d’avis. Dislike ajouté.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
+        } catch (error: any) {
             console.error('Error disliking post:', error);
-            alert('An error occurred while disliking the post.');
+            toast.warn(
+                "Soyez optimiste ! Vous n'allez pas disliker cette photo. Passez et basta 😊",
+                {
+                    position: 'top-right',
+                    autoClose: 5000,
+                    theme: 'colored',
+                }
+            );
         }
     };
     
@@ -112,7 +136,11 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
     
     const handleAddComment = async (text: string) => {
         if (!text.trim()) {
-            alert('Le commentaire ne peut pas être vide.');
+            toast.warn('😶 Le commentaire est vide. Ajoutez un peu de contenu !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
             return;
         }
 
@@ -128,8 +156,18 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
             };
     
             setComments((prevComments) => [...prevComments, newComment]);
+            toast.success('💬 Commentaire ajouté avec succès !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         } catch (error) {
             console.error('Error adding comment:', error);
+            toast.error('💥 Oups, une erreur est survenue lors de l’ajout du commentaire.', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
     };
 
@@ -147,8 +185,18 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
             setComments((prevComments) =>
                 prevComments.map((comment) => (comment.id === commentId ? updatedComment : comment))
             );
+            toast.info('✏️ Commentaire mis à jour avec succès !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         } catch (error) {
             console.error('Error editing comment:', error);
+            toast.error("❌ Impossible de modifier le commentaire pour le moment.", {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
     };
     
@@ -156,14 +204,23 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
         try {
             await deleteComment(commentId);
             setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
+            toast.success('🗑️ Commentaire supprimé avec succès !', {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         } catch (error) {
             console.error('Error deleting comment:', error);
+            toast.error("❌ Une erreur est survenue lors de la suppression.", {
+                position: 'top-right',
+                autoClose: 3000,
+                theme: 'colored',
+            });
         }
     };
 
     return (
         <div className="relative group bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-            {/* Media Section */}
             <div className="relative">
                 {item.mediaUrl ? (
                     item.mediaUrl.endsWith('.mp4') ? (
@@ -187,13 +244,10 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
                     {item.postType === 'PUBLIC' ? 'Public' : 'Private'}
                 </div>
             </div>
-
-            {/* Post Info Section */}
             <div className="p-6">
                 <h2 className="text-lg font-semibold text-dark truncate">{item.title}</h2>
                 <p className="text-sm text-gray-500 mt-1">{item.description}</p>
 
-                {/* Interaction Buttons */}
                 <div className="flex items-center justify-between mt-4">
                     <button
                             onClick={handleLike}
@@ -208,23 +262,27 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, on
                         <FaThumbsDown className="mr-2" /> Dislike
                     </button>
                 </div>
-                
-                <div className="flex items-center justify-between mt-4">
-                    <button
-                        onClick={handleOpenEditModal}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                    >
-                        Modifier
-                    </button>
-                    <button
-                        onClick={() => onDeletePost(item.id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
-                    >
-                        Supprimer
-                    </button>
-                </div>
 
-                {/* Comment Section */}
+               {role === 'ROLE_ADMIN' && ( 
+                    <div className="flex items-center justify-between mt-4">
+                        
+                        <button
+                            onClick={handleOpenEditModal}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        >
+                            Modifier
+                        </button>
+                        
+                            <button
+                                onClick={() => onDeletePost(item.id)}
+                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
+                            >
+                                Supprimer
+                            </button>
+                    
+                    </div>
+                )}
+
                 <div className="mt-4">
                     <CommentSection
                         item={item}

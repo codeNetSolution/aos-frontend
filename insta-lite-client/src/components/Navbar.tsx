@@ -17,12 +17,20 @@ const NavBar: React.FC = () => {
                             <Link to="/profile" className="text-dark hover:underline">
                                 Profil
                             </Link>
-                            {role === 'ROLE_USER' && (
+                            {role === 'ROLE_PREMIUM' && (
                                 <Link
                                     to="/portfolio/private"
                                     className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
                                 >
                                     Portfolio privé
+                                </Link>
+                            )}
+                            {role === 'ROLE_USER' && (
+                                <Link
+                                    to="/portfolio/public"
+                                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+                                >
+                                    Portfolio Public
                                 </Link>
                             )}
                             {role === 'ROLE_ADMIN' && (
