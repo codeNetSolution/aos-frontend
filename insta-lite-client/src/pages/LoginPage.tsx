@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import imagePhoneConnexion from '/phone_connexion.jpg';
-import { loginUser } from '../utils/api'
+import { getProfile, loginUser } from '../utils/api'
 import { useAuth } from '../contexts/AuthContext';
+import { setUsername } from '../utils/auth';
 
 
 const LoginPage: React.FC = () => {
@@ -23,14 +24,16 @@ const LoginPage: React.FC = () => {
           setError('');
           setIsLoading(true);
           const token = await loginUser(email, password);
-          login(token); 
+          login(token);
+          const Profile = await getProfile();
+          setUsername(Profile.username);
           navigate('/portfolio/private');
         } catch (err: any) {
           setError('Identifiants incorrects ou problème de connexion');
         } finally {
           setIsLoading(false);
         }
-      };
+    };
       
 
     return (

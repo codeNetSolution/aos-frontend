@@ -3,7 +3,7 @@ import { PortfolioItem } from '../types/portfolio';
 import Modal from '../components/modalNewPost';
 import PostCard from '../components/PostCard';
 import { getAllPublications,deletePublication, updatePublication  } from '../utils/api';
-import { getRole } from '../utils/auth';
+import { getRole, getUsernameProfile } from '../utils/auth';
 
 
 const PrivatePortfolio: React.FC = () => {
@@ -20,7 +20,7 @@ const PrivatePortfolio: React.FC = () => {
     });
     const [isPremium, setIsPremium] = useState(false);
     
-    const [currentUser] = useState('saidoabd');
+    const currentUser = getUsernameProfile();
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 6;
 
@@ -50,7 +50,7 @@ const PrivatePortfolio: React.FC = () => {
 useEffect(() => {
     const fetchUserInfo = async () => {
         try {
-            const userInfo = await getRole();
+            const userInfo = getRole();
             setIsPremium(userInfo === 'ROLE_PREMIUM');
         } catch (error) {
             console.error('Erreur lors de la récupération des informations utilisateur :', error);

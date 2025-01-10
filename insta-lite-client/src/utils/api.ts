@@ -134,7 +134,6 @@ export const unlikePost = async (postId: number): Promise<{ nbLike: number }> =>
 
 ///////////////////////////////// Publications ////////////////////////////////////////////
 
-
 export const getAllPublications = async () => {
     const response = await api.get('/api/posts');
     return response.data;
@@ -176,11 +175,16 @@ export const getPublicationById = async (id: number): Promise<PortfolioItem> => 
 };
 
 export const getPublicationsPublic = async (): Promise<PortfolioItem[]> => {
-    const response = await fetch('/api/posts/posts-publics');
-    if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des publications.');
+    try {
+        const response = await api.get('/api/posts/posts-publics');
+        return response.data;
+    } catch(erreur) {
+        console.error('erreur lors de la récupération des profils')
+        throw erreur;
+        
     }
-    return response.json();
+    
+
 };
 /////////////////////// Comments /////////////////////////
 export const getAllComments = async (): Promise<Comment[]> => {

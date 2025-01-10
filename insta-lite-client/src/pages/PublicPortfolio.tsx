@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { PortfolioItem } from '../types/portfolio';
 import PostCard from '../components/PostCard';
-import { getAllPublications } from '../utils/api';
+import { getPublicationsPublic } from '../utils/api';
+import { getUsernameProfile } from '../utils/auth';
 
 const PublicPortfolio: React.FC = () => {
     const [posts, setPosts] = useState<PortfolioItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [currentUser] = useState('saidoabd');
+    const currentUser = getUsernameProfile();
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 6;
     const indexOfLastPost = currentPage * postsPerPage;
@@ -21,7 +22,7 @@ const PublicPortfolio: React.FC = () => {
         const fetchPosts = async () => {
             try {
                 setIsLoading(true);
-                const data = await getAllPublications();
+                const data = await getPublicationsPublic();
                 setPosts(data);
             } catch {
                 setError("Erreur lors du chargement des publications.");

@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 const HomePage = () => (
     <div className="flex flex-col items-center justify-center w-full min-h-screen bg-light text-center min-h-screen bg-gray-100 pt-16">

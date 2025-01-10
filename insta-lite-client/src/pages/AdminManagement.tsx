@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getUsers, createUser, updateUser, deleteUser } from '../utils/api';
 import { User } from '../types/user';
 import Modal from '../components/ModalEditUser';

@@ -15,7 +15,7 @@ interface PostCardProps {
     onEditPost: (id: number, updatedPost: Partial<PortfolioItem>) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, onEditPost }) => {
+const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, onEditPost, isPremium }) => {
     const [likes, setLikes] = useState(item.nbLike || 0);
     const [isLiked, setIsLiked] = useState(false);
     const [comments, setComments] = useState<Comment[]>([]);

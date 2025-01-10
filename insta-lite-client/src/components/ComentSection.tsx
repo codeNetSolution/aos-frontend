@@ -22,7 +22,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({currentUser,
     const [newCommentText, setNewCommentText] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     
-    console.log("current user est ", currentUser)
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
 
