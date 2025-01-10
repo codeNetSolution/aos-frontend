@@ -118,7 +118,7 @@ export const likePost = async (postId: number): Promise<{ nbLike: number }> => {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
     });
-    return response.data; // Assurez-vous que le backend renvoie le nombre de likes mis à jour
+    return response.data; 
 };
 
 export const unlikePost = async (postId: number): Promise<{ nbLike: number }> => {
@@ -127,7 +127,7 @@ export const unlikePost = async (postId: number): Promise<{ nbLike: number }> =>
             Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
     });
-    return response.data; // Idem pour unlike
+    return response.data; 
 };
 
 
@@ -147,11 +147,17 @@ export const createPublication = async (formData: FormData) => {
 };
 
 export const updatePublication = async (id: number, formData: FormData) => {
-    const response = await api.put(`/api/posts/update/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
+    try {
+        const response = await api.put(`/api/posts/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour de la publication :", error);
+        throw error;
+    }
 };
+
 
 export const deletePublication = async (id: number) => {
     const response = await api.delete(`/api/posts/${id}`);
@@ -161,13 +167,20 @@ export const deletePublication = async (id: number) => {
 export const getPublicationById = async (id: number): Promise<PortfolioItem> => {
     try {
         const response = await api.get(`/api/posts/${id}`);
-        return response.data; // Retourne la publication spécifique
+        return response.data;
     } catch (error) {
         console.error(`Erreur lors de la récupération de la publication avec l'id ${id} :`, error);
         throw error;
     }
 };
 
+export const getPublicationsPublic = async (): Promise<PortfolioItem[]> => {
+    const response = await fetch('/api/posts/posts-publics');
+    if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des publications.');
+    }
+    return response.json();
+};
 /////////////////////// Comments /////////////////////////
 export const getAllComments = async (): Promise<Comment[]> => {
     const response = await api.get('/api/comments');
@@ -197,6 +210,66 @@ export const getPublicPublications = async (): Promise<PortfolioItem[]> => {
         throw error;
     }
 };
+
+
+///////////////////////////////// Media ////////////////////////////////////////////
+
+export const getPublicMedia = async (fileName: string): Promise<string> => {
+    try {
+        const response = await api.get(`/api/media/public/${fileName}`, {
+            responseType: 'blob',
+        });
+
+
+        const mediaUrl = URL.createObjectURL(response.data);
+        return mediaUrl;
+    } catch (error) {
+        console.error(`Erreur lors de la récupération du média public (${fileName}) :`, error);
+        throw error;
+    }
+};
+
+
+export const getPrivateMedia = async (fileName: string): Promise<string> => {
+    try {
+        const response = await api.get(`/api/media/private/${fileName}`, {
+            responseType: 'blob', 
+        });
+        const mediaUrl = URL.createObjectURL(response.data);
+        return mediaUrl;
+    } catch (error) {
+        console.error(`Erreur lors de la récupération du média privé (${fileName}) :`, error);
+        throw error;
+    }
+};
+
+///////////////////////////////// Admin Stats ////////////////////////////////////////////
+export const getAdminStats = async (): Promise<{
+    totalUsers: number;
+    totalPublications: number;
+    totalImages: number;
+    totalVideos: number;
+    totalComments: number;
+}> => {
+    try {
+        const response = await api.get('/api/admin/stats');
+        return response.data;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des statistiques :", error);
+        throw error;
+    }
+};
+
+export const getRecentActivities = async (): Promise<string[]> => {
+    try {
+        const response = await api.get('/api/admin/recent-activities');
+        return response.data;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des activités récentes :", error);
+        throw error;
+    }
+};
+
 
 
 export default api;

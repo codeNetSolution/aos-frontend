@@ -73,7 +73,7 @@ const AdminManagement = () => {
     }, []);
 
     return (
-        <div className="min-h-screen bg-light">
+        <div className="min-h-screen bg-light min-h-screen bg-gray-100 pt-16">
             <div className="container mx-auto py-8">
                 <h1 className="text-4xl font-extrabold text-dark text-center mb-8">Gestion des Utilisateurs</h1>
 
@@ -139,19 +139,19 @@ const AdminManagement = () => {
 
                 {isModalOpen && (
                     <Modal
-                    isEditMode={isEditMode}
-                    user={selectedUser}
-                    onClose={() => setIsModalOpen(false)}
-                    onSubmit={(user) => {
-                        if (isEditMode && user.id) {
-                            handleUpdateUser(user.id, user);
-                            setUsers((prevUsers) =>
-                                prevUsers.map((u) => (u.id === user.id ? user : u))
-                            );
-                        } 
-                    }}
-                />
+                        isEditMode={isEditMode}
+                        user={selectedUser}
+                        onClose={() => setIsModalOpen(false)}
+                        onSubmit={(user, file) => {
+                            if (isEditMode && user.id) {
+                                handleUpdateUser(user.id, user); 
+                            } else {
+                                handleAddUser(user); 
+                            }
+                        }}
+                    />
                 )}
+
             </div>
         </div>
     );

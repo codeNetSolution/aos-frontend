@@ -36,11 +36,11 @@ const LoginPage: React.FC = () => {
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50">
             <div className="flex flex-col lg:flex-row items-center w-full max-w-6xl bg-white shadow-md rounded-lg overflow-hidden">
-                {/* Section gauche : Mock-up téléphone */}
+                
                 <div className="hidden lg:flex flex-col items-center justify-center bg-gray-100 w-1/2 p-6">
                     <div className="relative w-72 h-96">
                         <img
-                            src={imagePhoneConnexion} // Remplacez par l'image du téléphone
+                            src={imagePhoneConnexion} 
                             alt="Phone Mockup"
                             className="absolute top-0 left-0 w-full h-full object-cover rounded-lg shadow-md"
                         />

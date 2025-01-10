@@ -1,7 +1,7 @@
 import React from 'react';
 
 const HomePage = () => (
-    <div className="flex flex-col items-center justify-center w-full min-h-screen bg-light text-center">
+    <div className="flex flex-col items-center justify-center w-full min-h-screen bg-light text-center min-h-screen bg-gray-100 pt-16">
         {/* Section de bienvenue */}
         <header className="flex flex-col items-center justify-center w-full py-12 bg-white shadow-md">
             <h1 className="text-5xl font-extrabold text-dark mb-4">Bienvenue sur Insta-lite</h1>

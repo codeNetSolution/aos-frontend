@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { PortfolioItem } from '../types/portfolio';
-import { addComment, updateComment, deleteComment , getAllComments} from '../utils/api';
 import { Comment } from '../types/portfolio';
 import Modal from './Modal';
 interface CommentSectionProps {
     item: PortfolioItem;
     currentUser: string;
-    comments: Comment[]; // Liste des commentaires
-    onAddComment: (text: string) => Promise<void>; // Ajout de la méthode pour ajouter un commentaire
-    onEditComment: (commentId: number, newText: string) => Promise<void>; // Ajout de la méthode pour éditer un commentaire
-    onDeleteComment: (commentId: number) => Promise<void>; // Ajout de la méthode pour supprimer un commentaire
+    comments: Comment[]; 
+    onAddComment: (text: string) => Promise<void>;
+    onEditComment: (commentId: number, newText: string) => Promise<void>;
+    onDeleteComment: (commentId: number) => Promise<void>; 
 }
-const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, comments,
+const CommentSection: React.FC<CommentSectionProps> = ({currentUser, comments,
     onAddComment,
     onEditComment,
     onDeleteComment,
@@ -20,7 +19,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, comm
     const [newCommentText, setNewCommentText] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     
-    // Ajouter un commentaire
+    console.log("current user est ", currentUser)
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -35,34 +34,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ item, currentUser, comm
         } catch (error) {
             console.error('Erreur lors de l’ajout du commentaire :', error);
             alert('Impossible d’ajouter le commentaire.');
-        }
-    };
-
-    // Modifier un commentaire
-    const handleEditComment = async (commentId: number, newText: string) => {
-        if (!newText.trim()) {
-            alert('Le commentaire ne peut pas être vide.');
-            return;
-        }
-
-        try {
-            await updateComment(commentId, newText);
-            setEditingCommentId(null); // Sortir du mode édition
-        } catch (error) {
-            console.error('Erreur lors de la modification du commentaire:', error);
-            alert('Impossible de modifier le commentaire.');
-        }
-    };
-
-    // Supprimer un commentaire
-    const handleDeleteComment = async (commentId: number) => {
-        if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) return;
-
-        try {
-            await deleteComment(commentId);
-        } catch (error) {
-            console.error('Erreur lors de la suppression du commentaire:', error);
-            alert('Impossible de supprimer le commentaire.');
         }
     };
 

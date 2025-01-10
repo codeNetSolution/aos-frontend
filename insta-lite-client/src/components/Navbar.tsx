@@ -6,7 +6,7 @@ const NavBar: React.FC = () => {
     const { isAuthenticated, role, logout } = useAuth();
 
     return (
-        <nav className="bg-white shadow-md">
+        <nav className="bg-white shadow-md fixed top-0 left-0 w-full z-50">
             <div className="container mx-auto flex justify-between items-center py-4 px-6">
                 <Link to="/" className="text-primary font-bold text-2xl">
                     Insta-lite

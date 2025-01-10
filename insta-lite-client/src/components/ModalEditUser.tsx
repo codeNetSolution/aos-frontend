@@ -11,11 +11,11 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) => {
     const [formData, setFormData] = useState<User>(
-        user || {
+        user ?? {  
             email: '',
             password: '',
             username: '',
-            role: 'Utilisateur',
+            role: 'ROLE_USER', 
             profilePic: '',
         }
     );
@@ -27,8 +27,6 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
         const { name, value } = e.target;
     
         let mappedValue = value;
-    
-        // Mapper les rôles pour la propriété `role`
         if (name === 'role') {
             if (value === 'Utilisateur') {
                 mappedValue = 'ROLE_USER';
@@ -55,12 +53,17 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const updatedData = { ...formData };
-
+    
         if (!isEditMode || (isEditMode && changePassword)) {
             const salt = await bcrypt.genSalt(10);
             updatedData.password = await bcrypt.hash(updatedData.password, salt);
         }
-
+    
+        if (selectedFile) {
+            updatedData.profilePic = selectedFile.name;
+        }
+    
+        console.log('Submitting data:', updatedData, selectedFile);
         onSubmit(updatedData, selectedFile || undefined);
     };
 

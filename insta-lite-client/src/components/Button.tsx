@@ -1,4 +1,3 @@
-{/* Buttons réutilisable*/}
 import React from 'react';
 
 interface ButtonProps {

@@ -65,10 +65,6 @@ const AppRoutes = ()=> (
 
         {/* Fallback */}
         <Route path="*" element={<NotFoundPage />} />
-
-        {/*fallback */}
-        <Route path="*" element={<NotFoundPage />} />
-
     </Routes>
 );
 

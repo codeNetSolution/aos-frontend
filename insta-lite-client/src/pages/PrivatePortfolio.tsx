@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PortfolioItem } from '../types/portfolio';
 import Modal from '../components/modalNewPost';
 import PostCard from '../components/PostCard';
-import { getAllPublications } from '../utils/api';
+import { getAllPublications,deletePublication, updatePublication  } from '../utils/api';
 
 const PrivatePortfolio: React.FC = () => {
     const [posts, setPosts] = useState<PortfolioItem[]>([]);
@@ -17,7 +17,8 @@ const PrivatePortfolio: React.FC = () => {
         visibility: 'public',
     });
 
-    const [currentUser] = useState('karim');
+    
+    const [currentUser] = useState('saidoabd');
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 6;
 
@@ -47,59 +48,64 @@ const PrivatePortfolio: React.FC = () => {
         setPosts((prevPosts) => [newPost, ...prevPosts]);
     };
 
-    const handleAddPost = () => {
-        if (!newPost.title || !newPost.imageUrl) {
-            alert('Le titre et l’image sont obligatoires.');
+    const convertToFormData = (data: {
+        description?: string;
+        postType?: string;
+        mediaFile?: File | null;
+    }): FormData => {
+        const formData = new FormData();
+    
+        if (data.description) {
+            formData.append("description", data.description);
+        }
+    
+        if (data.postType) {
+            formData.append("postType", data.postType);
+        }
+    
+        if (data.mediaFile) {
+            formData.append("mediaFile", data.mediaFile);
+        }
+    
+        return formData;
+    };
+    
+    
+
+    const handleEditPost = async (postId: number, updatedPost: Partial<PortfolioItem>) => {
+        try {
+            const formData = convertToFormData({
+                description: updatedPost.description,
+                postType: updatedPost.postType,
+            });
+            const updatedData = await updatePublication(postId, formData);
+            setPosts((prevPosts) =>
+                prevPosts.map((post) =>
+                    post.id === postId ? { ...post, ...updatedData } : post
+                )
+            );
+        } catch (error) {
+            console.error("Erreur lors de la modification de la publication :", error);
+            alert("Une erreur est survenue lors de la modification de la publication.");
+        }
+    };
+    
+    const handleDeletePost = async (postId: number) => {
+        if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette publication ?")) {
             return;
         }
 
-        const newPostData: PortfolioItem = {
-            id: Date.now(),
-            title: newPost.title!,
-            description: newPost.description || '',
-            imageUrl: newPost.imageUrl!,
-            location: newPost.location || '',
-            visibility: newPost.visibility as 'public' | 'private',
-            comments: [],
-        };
-
-        setPosts((prevPosts) => [newPostData, ...prevPosts]);
-        setNewPost({ title: '', description: '', imageUrl: '', location: '', visibility: 'public' });
-        setIsModalOpen(false);
-    };
-
-    const handleCommentActions = (action: string, itemId: number, commentId?: number, text?: string) => {
-        const updatedPosts = posts.map((item) => {
-            if (item.id === itemId) {
-                if (action === 'add') {
-                    return {
-                        ...item,
-                        comments: [...item.comments, { id: Date.now(), text: text!, author: currentUser }],
-                    };
-                }
-                if (action === 'edit') {
-                    return {
-                        ...item,
-                        comments: item.comments.map((comment) =>
-                            comment.id === commentId ? { ...comment, text: text! } : comment
-                        ),
-                    };
-                }
-                if (action === 'delete') {
-                    return {
-                        ...item,
-                        comments: item.comments.filter((comment) => comment.id !== commentId),
-                    };
-                }
-            }
-            return item;
-        });
-
-        setPosts(updatedPosts);
+        try {
+            await deletePublication(postId); 
+            setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+        } catch (error) {
+            console.error("Erreur lors de la suppression de la publication :", error);
+            alert("Une erreur est survenue lors de la suppression de la publication.");
+        }
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 pt-16">
             <div className="container mx-auto py-8 px-4">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-4xl font-extrabold text-gray-800">Portfolio Privé</h1>
@@ -123,6 +129,8 @@ const PrivatePortfolio: React.FC = () => {
                                     key={item.id}
                                     item={item}
                                     currentUser={currentUser}
+                                    onDeletePost={handleDeletePost}
+                                    onEditPost={handleEditPost}
                                 />
                             ))}
                         </div>

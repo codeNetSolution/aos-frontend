@@ -72,7 +72,7 @@ const ProfilePage = () => {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-light">
+        <div className="flex items-center justify-center min-h-screen bg-light min-h-screen bg-gray-100 pt-16">
             <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
                 <h2 className="text-3xl font-extrabold text-dark text-center">Mon Profil</h2>
                 {error && <p className="text-red-500 text-sm mt-2">{error}</p>}

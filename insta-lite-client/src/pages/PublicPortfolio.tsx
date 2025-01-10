@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { PortfolioItem } from '../types/portfolio';
 import PostCard from '../components/PostCard';
-import { getPublicPublications } from '../utils/api';
+import { getAllPublications } from '../utils/api';
 
 const PublicPortfolio: React.FC = () => {
     const [posts, setPosts] = useState<PortfolioItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [currentUser] = useState('saidoabd');
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 6;
-
     const indexOfLastPost = currentPage * postsPerPage;
     const indexOfFirstPost = indexOfLastPost - postsPerPage;
     const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
@@ -17,33 +18,31 @@ const PublicPortfolio: React.FC = () => {
     const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
     useEffect(() => {
-        const fetchPublicPosts = async () => {
+        const fetchPosts = async () => {
             try {
                 setIsLoading(true);
-                const data = await getPublicPublications();
-                setPosts(data.map((item) => ({
-                    ...item,
-                    likes: item.nbLike || 0, 
-                    imageUrl: item.filepath || '', 
-                    comments: [], 
-                })));
-            } catch (err) {
-                setError("Erreur lors du chargement des publications publiques.");
+                const data = await getAllPublications();
+                setPosts(data);
+            } catch {
+                setError("Erreur lors du chargement des publications.");
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchPublicPosts();
+        fetchPosts();
     }, []);
 
+
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 pt-16">
             <div className="container mx-auto py-8 px-4">
-                <h1 className="text-4xl font-extrabold text-gray-800 text-center mb-8">Portfolio Public</h1>
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-4xl font-extrabold text-gray-800">Portfolio Pubic</h1>
+                </div>
 
                 {isLoading ? (
-                    <div className="text-center text-gray-500">Chargement des publications publiques...</div>
+                    <div className="text-center text-gray-500">Chargement des publications...</div>
                 ) : error ? (
                     <div className="text-center text-red-500">{error}</div>
                 ) : (
@@ -53,10 +52,8 @@ const PublicPortfolio: React.FC = () => {
                                 <PostCard
                                     key={item.id}
                                     item={item}
-                                    currentUser="guest" 
-                                    handleAddComment={() => {}}
-                                    handleEditComment={() => {}}
-                                    handleDeleteComment={() => {}}
+                                    currentUser={currentUser}
+                                    
                                 />
                             ))}
                         </div>

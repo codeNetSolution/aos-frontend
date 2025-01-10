@@ -2,22 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { FaHeart, FaThumbsDown  } from 'react-icons/fa';
 import CommentSection from '../components/ComentSection';
 import { PortfolioItem, Comment } from '../types/portfolio';
-import { likePost, unlikePost, addComment, updateComment, deleteComment, getAllComments, getPublicationById } from '../utils/api';
-import Modal from './ModalEditUser';
+import { likePost, unlikePost, addComment, updateComment, deleteComment, getAllComments, getPublicMedia,
+    getPrivateMedia 
+ } from '../utils/api';
+
 
 interface PostCardProps {
     item: PortfolioItem;
     currentUser: string;
+    onDeletePost: (id: number) => void;
+    onEditPost: (id: number, updatedPost: Partial<PortfolioItem>) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
+const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onDeletePost, onEditPost }) => {
     const [likes, setLikes] = useState(item.nbLike || 0);
     const [isLiked, setIsLiked] = useState(false);
     const [comments, setComments] = useState<Comment[]>([]);
+    const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+    const [editedPost, setEditedPost] = useState<Partial<PortfolioItem>>(item);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    // Load likes and comments
     useEffect(() => {
         if (item.likedBy && Array.isArray(item.likedBy)) {
             setIsLiked(item.likedBy.includes(currentUser));
@@ -25,55 +29,72 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
         fetchComments();
     }, [item.likedBy, currentUser, item.id]);
 
-    
-    // Handle like toggle
+    useEffect(() => {
+        const fetchMedia = async () => {
+            try {
+                const url = item.postType === 'PUBLIC'
+                    ? await getPublicMedia(item.mediaUrl as string)
+                    : await getPrivateMedia(item.mediaUrl as string);
+                setMediaUrl(url);
+            } catch (error) {
+                console.error('Error fetching media:', error);
+            }
+        };
+
+        if (item.mediaUrl) {
+            fetchMedia();
+        }
+    }, [item.mediaUrl, item.postType]);
+
+    useEffect(() => {
+        if (isEditModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+    }, [isEditModalOpen]);
+
+
     const handleLike = async () => {
         try {
             await likePost(item.id);
-            setLikes((prevLikes) => prevLikes + 1); // Augmente le compteur de likes
-            setIsLiked(true); // Marque comme liké
+            setLikes((prevLikes) => prevLikes + 1); 
+            setIsLiked(true); 
         } catch (error) {
             console.error('Error liking post:', error);
             alert('An error occurred while liking the post.');
         }
     };
 
+    
+
     const handleDislike = async () => {
         try {
             await unlikePost(item.id);
-            setLikes((prevLikes) => Math.max(prevLikes - 1, 0)); // Diminue le compteur de likes
-            setIsLiked(false); // Marque comme non liké
+            setLikes((prevLikes) => Math.max(prevLikes - 1, 0));
+            setIsLiked(false);
         } catch (error) {
             console.error('Error disliking post:', error);
             alert('An error occurred while disliking the post.');
         }
     };
     
-
-    const fetchUpdatedPost = async () => {
-        try {
-            const updatedPost: PortfolioItem = await getPublicationById(item.id);
-    
-            // Utilise une valeur par défaut si updatedPost.nbLike est undefined
-            setLikes(updatedPost.nbLike ?? 0); // Utilise 0 si nbLike est undefined
-    
-            if (updatedPost.likedBy && Array.isArray(updatedPost.likedBy)) {
-                setIsLiked(updatedPost.likedBy.includes(currentUser));
-            }
-        } catch (error) {
-            console.error("Error fetching updated post data:", error);
-        }
+    const handleOpenEditModal = () => {
+        setEditedPost(item); 
+        setIsEditModalOpen(true);
     };
 
-    // Fetch comments
+    const handleEditPost = () => {
+        onEditPost(item.id, editedPost);
+        setIsEditModalOpen(false); 
+    }
+    
     const fetchComments = async () => {
         try {
             const response: any = await getAllComments();
             const postComments = response.filter(
-                (comment: any) => comment.publication.id === item.id // Vérifiez publication.id
+                (comment: any) => comment.publication.id === item.id 
             );
-    
-            // Transformez les commentaires pour correspondre au type `Comment`
             const formattedComments: Comment[] = postComments.map((comment: any) => ({
                 id: comment.id,
                 text: comment.text,
@@ -88,9 +109,6 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
         }
     };
     
-    
-
-    // Add a new comment
     const handleAddComment = async (text: string) => {
         if (!text.trim()) {
             alert('Le commentaire ne peut pas être vide.');
@@ -103,9 +121,9 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
             const newComment: Comment = {
                 id: newCommentData.id,
                 text: newCommentData.text,
-                author: newCommentData.user.username, // Récupérez l'auteur
-                postId: newCommentData.publication.id, // Récupérez l'ID de la publication
-                date: newCommentData.date, // Récupérez la date
+                author: newCommentData.user.username, 
+                postId: newCommentData.publication.id, 
+                date: newCommentData.date, 
             };
     
             setComments((prevComments) => [...prevComments, newComment]);
@@ -114,18 +132,15 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
         }
     };
 
-    // Edit an existing comment
     const handleEditComment = async (commentId: number, newText: string) => {
         try {
             const updatedCommentData = await updateComment(commentId, newText);
-    
-            // Transformez l'objet pour correspondre au type `Comment`
             const updatedComment: Comment = {
                 id: updatedCommentData.id,
                 text: updatedCommentData.text,
-                author: updatedCommentData.user.username, // Récupérez le nom de l'auteur
-                postId: updatedCommentData.publication.id, // Récupérez l'ID de la publication
-                date: updatedCommentData.date, // Date de modification
+                author: updatedCommentData.user.username,
+                postId: updatedCommentData.publication.id,
+                date: updatedCommentData.date, 
             };
     
             setComments((prevComments) =>
@@ -136,8 +151,6 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
         }
     };
     
-
-    // Delete a comment
     const handleDeleteComment = async (commentId: number) => {
         try {
             await deleteComment(commentId);
@@ -147,41 +160,30 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
         }
     };
 
-    // Share post handler
-    const handleShare = () => {
-        alert(`Link shared for the post "${item.title}"`);
-    };
-
-
-    const handleShowAllComments = () => {
-        setIsModalOpen(true); // Ouvre la modal
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false); // Ferme la modal
-    };
-
     return (
         <div className="relative group bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300">
             {/* Media Section */}
             <div className="relative">
-                {typeof item.imageUrl === 'string' && item.imageUrl.endsWith('.mp4') ? (
-                    <video
-                        src={item.imageUrl}
-                        className="w-full h-64 object-cover rounded-t-xl"
-                        controls
-                    />
-                ) : typeof item.imageUrl === 'string' ? (
-                    <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        className="w-full h-64 object-cover rounded-t-xl transition-transform duration-300 group-hover:scale-105"
-                    />
+                {item.mediaUrl ? (
+                    item.mediaUrl.endsWith('.mp4') ? (
+                        <video
+                            src={mediaUrl as string} 
+                            className="w-full h-64 object-cover rounded-t-xl"
+                            controls
+                        />
+                    ) : (
+                        <img
+                            src={mediaUrl as string} 
+                            alt={item.title}
+                            className="w-full h-64 object-cover rounded-t-xl transition-transform duration-300 group-hover:scale-105"
+                        />
+                    )
                 ) : (
                     <p className="text-sm text-gray-500">Fichier non supporté</p>
                 )}
+
                 <div className="absolute top-3 left-3 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                    {item.type === 'public' ? 'Public' : 'Private'}
+                    {item.postType === 'PUBLIC' ? 'Public' : 'Private'}
                 </div>
             </div>
 
@@ -189,9 +191,6 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
             <div className="p-6">
                 <h2 className="text-lg font-semibold text-dark truncate">{item.title}</h2>
                 <p className="text-sm text-gray-500 mt-1">{item.description}</p>
-                {item.location && (
-                    <p className="text-sm text-primary mt-2">📍 {item.location}</p>
-                )}
 
                 {/* Interaction Buttons */}
                 <div className="flex items-center justify-between mt-4">
@@ -208,6 +207,21 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
                         <FaThumbsDown className="mr-2" /> Dislike
                     </button>
                 </div>
+                
+                <div className="flex items-center justify-between mt-4">
+                    <button
+                        onClick={handleOpenEditModal}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                    >
+                        Modifier
+                    </button>
+                    <button
+                        onClick={() => onDeletePost(item.id)}
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
+                    >
+                        Supprimer
+                    </button>
+                </div>
 
                 {/* Comment Section */}
                 <div className="mt-4">
@@ -220,7 +234,45 @@ const PostCard: React.FC<PostCardProps> = ({ item, currentUser }) => {
                         onDeleteComment={handleDeleteComment}
                     />
                 </div>
+
             </div>
+            {/* Modal pour modification */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
+                        <h2 className="text-lg font-bold mb-4">Modifier la publication</h2>
+                        <textarea
+                            placeholder="Description"
+                            value={editedPost.description || ''}
+                            onChange={(e) => setEditedPost({ ...editedPost, description: e.target.value })}
+                            className="w-full mb-2 px-3 py-2 border rounded-lg"
+                        />
+                        <select
+                            value={editedPost.postType || 'PUBLIC'}
+                            onChange={(e) => setEditedPost({ ...editedPost, postType: e.target.value as 'PUBLIC' | 'PRIVATE'})}
+                            className="w-full mb-2 px-3 py-2 border rounded-lg"
+                        >
+                            <option value="PUBLIC">Public</option>
+                            <option value="PRIVATE">Privé</option>
+                        </select>
+                        <div className="flex justify-between">
+                            <button
+                                onClick={handleEditPost}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Enregistrer
+                            </button>
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                            >
+                                Annuler
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
