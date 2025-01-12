@@ -15,7 +15,6 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, addPost }) => {
     const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-    const [mediaType, setMediaType] = useState<string | null>(null); 
 
     if (!isOpen) return null;
 
@@ -36,7 +35,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, add
             formData.append('description', newPost.description); 
             formData.append('postType', newPost.visibility.toUpperCase()); 
             formData.append('mediaFile', mediaFile);
-            formData.append('mediaType', mediaType!);
 
             const createdPublication = await createPublication(formData);
             const createdPost: PortfolioItem = {
@@ -78,7 +76,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, add
             const MAX_VIDEO_SIZE = 30 * 1024 * 1024; 
 
             if (mimeType.startsWith('image/')) {
-                setMediaType('IMAGE');
                 if (fileSize > MAX_IMAGE_SIZE) {
                     try {
                         const compressedImage = await imageCompression(file, { maxSizeMB: 2 });
@@ -105,7 +102,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, newPost, setNewPost, add
                     reader.readAsDataURL(file);
                 }
             } else if (mimeType.startsWith('video/')) {
-                setMediaType('VIDEO');
                 if (fileSize > MAX_VIDEO_SIZE) {
                     toast.warn('⚠️ La taille de la vidéo dépasse 30 Mo.', {
                         position: 'top-right',

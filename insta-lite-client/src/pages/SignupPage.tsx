@@ -7,15 +7,25 @@ const SignupPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
+    const [profilePic, setProfilePic] = useState<File | null>(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isRedirecting, setIsRedirecting] = useState(false);
     const navigate = useNavigate();
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setProfilePic(file);
+        } else {
+            setProfilePic(null);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email || !password || !username) {
+        if (!email || !password || !username || !profilePic) {
             setError('Veuillez remplir tous les champs.');
             toast.warn('⚠️ Veuillez remplir tous les champs.', {
                 position: 'top-right',
@@ -28,7 +38,7 @@ const SignupPage: React.FC = () => {
             setError('');
             setSuccess('');
             setIsLoading(true);
-            await registerUser({ email, password, username });
+            await registerUser({ email, password, username, profilePic });
             toast.success('🎉 Inscription réussie ! Vous allez être redirigé vers la page de connexion.', {
                 position: 'top-right',
                 autoClose: 3000,
@@ -100,6 +110,19 @@ const SignupPage: React.FC = () => {
                             placeholder="Votre mot de passe"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="profilePic" className="block text-gray-700 font-medium mb-2">
+                            Photo de profil
+                        </label>
+                        <input
+                            id="profilePic"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
                             required
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                         />

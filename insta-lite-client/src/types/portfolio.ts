@@ -1,9 +1,11 @@
 export interface Comment {
     id: number;
     text: string;
+    userId: number;
     author: string; // Correspond à user.username
     postId: number; // Correspond à publication.id
     date: string; // Date ISO
+    profilePic?: string;
 }
 
 export interface PortfolioItem {

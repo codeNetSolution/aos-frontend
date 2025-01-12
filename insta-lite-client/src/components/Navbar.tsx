@@ -14,7 +14,7 @@ const NavBar: React.FC = () => {
                 <div className="flex space-x-4">
                     {isAuthenticated ? (
                         <>
-                            <Link to="/profile" className="text-dark hover:underline">
+                            <Link to="/profile" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">
                                 Profil
                             </Link>
                             {role === 'ROLE_PREMIUM' && (

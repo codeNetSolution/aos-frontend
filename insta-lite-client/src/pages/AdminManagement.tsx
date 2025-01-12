@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
-import { getUsers, createUser, updateUser, deleteUser } from '../utils/api';
+import { getUsers, registerUser, getProfilePicture, updateUser, deleteUser } from '../utils/api';
 import { User } from '../types/user';
 import Modal from '../components/ModalEditUser';
 import { toast } from 'react-toastify';
-
 import imageProfil from '../../public/icon_profile.png';
-
 
 const AdminManagement = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedUser, setSelectedUser] = useState<User | null>(null); 
-    const [isModalOpen, setIsModalOpen] = useState(false); 
-    const [isEditMode, setIsEditMode] = useState(false); 
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+
+    const [profilePics, setProfilePics] = useState<{ [key: string]: string }>({});
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -21,7 +21,22 @@ const AdminManagement = () => {
             const data = await getUsers();
             console.log('Données récupérées:', data);
             setUsers(data);
-        } catch (err: any) {
+
+            const newProfilePics: { [key: string]: string } = {};
+            await Promise.all(
+                data.map(async (user) => {
+                    if (user.id) {
+                        try {
+                            const imageUrl = await getProfilePicture(user.id);
+                            newProfilePics[user.id] = imageUrl;
+                        } catch {
+                            newProfilePics[user.id] = imageProfil; // Use fallback if fetching fails
+                        }
+                    }
+                })
+            );
+            setProfilePics(newProfilePics);
+        } catch {
             toast.error("Erreur lors de la récupération des utilisateurs.", { position: 'top-right', theme: 'colored' });
             setError("Une erreur s'est produite lors de la récupération des utilisateurs.");
         } finally {
@@ -29,27 +44,34 @@ const AdminManagement = () => {
         }
     };
 
-    const handleAddUser = async (user: User) => {
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleAddUser = async (formData: FormData) => {
         try {
-            const createdUser = await createUser(user);
-            setUsers((prevUsers) => [...prevUsers, createdUser]);
-            setIsModalOpen(false); 
-            toast.success('Utilisateur ajouté avec succès !', { position: 'top-right', theme: 'colored' });
-        } catch (err: any) {
+            await registerUser({
+                email: formData.get('email') as string,
+                password: formData.get('password') as string,
+                username: formData.get('username') as string,
+                profilePic: formData.get('profilePic') as File,
+            });
+            fetchUsers();
+            setIsModalOpen(false);
+            toast.success('Utilisateur ajouté avec succès !', { position: 'top-right', theme: 'colored' });
+        } catch {
             setError("Erreur lors de l'ajout de l'utilisateur.");
             toast.error("Impossible d'ajouter l'utilisateur.", { position: 'top-right', theme: 'colored' });
         }
     };
 
-    const handleUpdateUser = async (id: number, user: Partial<User>) => {
+    const handleUpdateUser = async (id: number, formData: FormData) => {
         try {
-            const updatedUser = await updateUser(id, user);
-            setUsers((prevUsers) =>
-                prevUsers.map((u) => (u.id === id ? updatedUser : u))
-            );
-            setIsModalOpen(false); 
-            toast.info('Utilisateur mis à jour avec succès !', { position: 'top-right', theme: 'colored' });
-        } catch (err: any) {
+            await updateUser(id, formData);
+            fetchUsers();
+            setIsModalOpen(false);
+            toast.info('Utilisateur mis à jour avec succès !', { position: 'top-right', theme: 'colored' });
+        } catch {
             toast.error("Impossible de mettre à jour l'utilisateur.", { position: 'top-right', theme: 'colored' });
             setError("Erreur lors de la mise à jour de l'utilisateur.");
         }
@@ -58,9 +80,9 @@ const AdminManagement = () => {
     const handleDeleteUser = async (id: number) => {
         try {
             await deleteUser(id);
-            setUsers((prevUsers) => prevUsers.filter((u) => u.id !== id));
+            fetchUsers();
             toast.success('Utilisateur supprimé avec succès !', { position: 'top-right', theme: 'colored' });
-        } catch (err: any) {
+        } catch {
             toast.error("Impossible de supprimer l'utilisateur.", { position: 'top-right', theme: 'colored' });
             setError("Erreur lors de la suppression de l'utilisateur.");
         }
@@ -77,10 +99,6 @@ const AdminManagement = () => {
         setIsEditMode(true);
         setIsModalOpen(true);
     };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
 
     return (
         <div className="min-h-screen bg-light min-h-screen bg-gray-100 pt-16">
@@ -117,7 +135,7 @@ const AdminManagement = () => {
                                     <tr key={user.id} className="border-t">
                                         <td className="px-4 py-2">
                                             <img
-                                                src={imageProfil}
+                                                src={profilePics[user.id as string] || imageProfil}
                                                 alt="Profil"
                                                 className="w-12 h-12 rounded-full"
                                             />
@@ -152,16 +170,15 @@ const AdminManagement = () => {
                         isEditMode={isEditMode}
                         user={selectedUser}
                         onClose={() => setIsModalOpen(false)}
-                        onSubmit={(user, file) => {
-                            if (isEditMode && user.id) {
-                                handleUpdateUser(user.id, user); 
+                        onSubmit={(formData) => {
+                            if (isEditMode && selectedUser?.id) {
+                                handleUpdateUser(selectedUser.id, formData);
                             } else {
-                                handleAddUser(user); 
+                                handleAddUser(formData);
                             }
                         }}
                     />
                 )}
-
             </div>
         </div>
     );

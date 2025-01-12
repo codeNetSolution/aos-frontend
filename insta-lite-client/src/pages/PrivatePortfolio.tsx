@@ -72,14 +72,29 @@ useEffect(() => {
     fetchUserInfo();
 }, []);
 
-    const addPost = (newPost: PortfolioItem) => {
-        setPosts((prevPosts) => [newPost, ...prevPosts]);
+const addPost = async (newPost: PortfolioItem) => {
+    try {
+        // Fetch all publications to get the updated list including the new post
+        const updatedPosts = await getAllPublications();
+        setPosts(updatedPosts);
+        
+        // Show success message
         toast.success('🎉 Nouvelle publication ajoutée avec succès !', {
             position: 'top-right',
             autoClose: 3000,
             theme: 'colored',
         });
-    };
+        
+        // Close the modal
+        setIsModalOpen(false);
+    } catch (error) {
+        toast.error('❌ Erreur lors du rafraîchissement des publications.', {
+            position: 'top-right',
+            autoClose: 3000,
+            theme: 'colored',
+        });
+    }
+};
 
     const convertToFormData = (data: {
         description?: string;

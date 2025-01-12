@@ -56,10 +56,12 @@ export const createUser = async (user: {email: string; password: string; usernam
     return response.data;
 }
 
-export const updateUser = async (id: number, user: Partial<User>) => {
-    const response = await api.put(`/api/users/${id}`, user);
+export const updateUser = async (id: number, formData: FormData) => {
+    const response = await api.put(`/api/users/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
-}
+};
 
 export const deleteUser = async (id: number) => {
     await api.delete(`/api/users/${id}`);
@@ -85,6 +87,18 @@ export const updateProfile = async (user: Partial<User>): Promise<User> => {
     }
 };
 
+export const getProfilePicture = async (userId: number): Promise<string> => {
+    try {
+        const response = await api.get(`/api/users/${userId}/profile-picture`, {
+            responseType: 'blob',
+        });
+        const imageUrl = URL.createObjectURL(response.data);
+        return imageUrl;
+    } catch (error) {
+        console.error(`Erreur lors de la récupération de l'image de profil (ID: ${userId}) :`, error);
+        throw error;
+    }
+};
 
 
 ///////////////////////////////// Auth ////////////////////////////////////////////
@@ -95,12 +109,23 @@ export const loginUser = async (email: string, password: string): Promise<string
     return response.data.token;
 }
 
-export const registerUser= async (user: {
+export const registerUser = async (user: {
     email: string;
     password: string;
     username: string;
-}) : Promise<void> => {
-    await api.post('/api/auth/register', user);
+    profilePic: File;
+}): Promise<void> => {
+    const formData = new FormData();
+    formData.append('email', user.email);
+    formData.append('password', user.password);
+    formData.append('username', user.username);
+    formData.append('profilePic', user.profilePic);
+
+    await api.post('/api/auth/register', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
 };
 
 

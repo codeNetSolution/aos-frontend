@@ -1,44 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types/user';
-import bcrypt from 'bcryptjs';
 import { toast } from 'react-toastify';
+import { getProfilePicture } from '../utils/api';
 
 interface ModalProps {
     isEditMode: boolean;
     user?: User | null;
     onClose: () => void;
-    onSubmit: (user: User, file?: File) => void;
+    onSubmit: (formData: FormData) => void;
 }
 
 const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) => {
     const [formData, setFormData] = useState<User>(
-        user ?? {  
+        user ?? {
             email: '',
             password: '',
             username: '',
-            role: 'ROLE_USER', 
             profilePic: '',
         }
     );
-    const [changePassword, setChangePassword] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-    
-        let mappedValue = value;
-        if (name === 'role') {
-            if (value === 'Utilisateur') {
-                mappedValue = 'ROLE_USER';
-            } else if (value === 'Administrateur') {
-                mappedValue = 'ROLE_ADMIN';
-            } else if (value === 'Premium') {
-                mappedValue = 'ROLE_PREMIUM';
+    useEffect(() => {
+        if (isEditMode && user) {
+            setFormData(user);
+            if (user.profilePic) {
+                getProfilePicture(user.id)
+                    .then((url) => setImagePreview(url))
+                    .catch(() => setImagePreview(null));
             }
         }
-    
-        setFormData({ ...formData, [name]: mappedValue });
+    }, [isEditMode, user]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,34 +49,41 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const updatedData = { ...formData };
-    
+
+        const form = new FormData();
+        form.append('email', formData.email);
+        form.append('password', formData.password);
+        form.append('username', formData.username);
+        if (selectedFile) {
+            form.append('profilePic', selectedFile);
+        } else if (formData.profilePic) {
+            form.append('profilePic', formData.profilePic);
+        }
+
         try {
-            if (!isEditMode || (isEditMode && changePassword)) {
-                const salt = await bcrypt.genSalt(10);
-                updatedData.password = await bcrypt.hash(updatedData.password, salt);
-            }
-        
-            if (selectedFile) {
-                updatedData.profilePic = selectedFile.name;
-            }
-            onSubmit(updatedData, selectedFile || undefined);
+            onSubmit(form);
             toast.success(`✅ Utilisateur ${isEditMode ? 'modifié' : 'ajouté'} avec succès !`, {
                 position: 'top-right',
                 autoClose: 3000,
                 theme: 'colored',
             });
-        } catch (err){
+        } catch (err) {
             toast.error('❌ Une erreur est survenue lors de la soumission.', {
                 position: 'top-right',
                 autoClose: 3000,
                 theme: 'colored',
             });
         }
-        
+    };
 
+    const openImageModal = () => {
+        setIsImageModalOpen(true);
+    };
+
+    const closeImageModal = () => {
+        setIsImageModalOpen(false);
     };
 
     return (
@@ -110,20 +115,7 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                         />
                     </div>
-                    {isEditMode && (
-                        <div className="mb-4">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={changePassword}
-                                    onChange={() => setChangePassword(!changePassword)}
-                                    className="mr-2"
-                                />
-                                Modifier le mot de passe
-                            </label>
-                        </div>
-                    )}
-                    {(changePassword || !isEditMode) && (
+                    {!isEditMode && (
                         <div className="mb-4">
                             <input
                                 type="password"
@@ -131,7 +123,7 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
                                 placeholder="Mot de passe"
                                 value={formData.password}
                                 onChange={handleChange}
-                                required={!isEditMode || changePassword}
+                                required
                                 className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                             />
                         </div>
@@ -147,30 +139,14 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
                         />
                         {imagePreview && (
-                            <img
-                                src={imagePreview}
-                                alt="Aperçu"
-                                className="mt-4 w-full h-48 object-cover rounded-lg"
-                            />
+                            <div className="mt-4 cursor-pointer" onClick={openImageModal}>
+                                <img
+                                    src={imagePreview}
+                                    alt="Aperçu"
+                                    className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+                                />
+                            </div>
                         )}
-                    </div>
-                    <div className="mb-4">
-                        <select
-                            name="role"
-                            value={
-                                formData.role === 'ROLE_USER'
-                                    ? 'Utilisateur'
-                                    : formData.role === 'ROLE_ADMIN'
-                                    ? 'Administrateur'
-                                    : 'Premium'
-                            }
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none"
-                        >
-                            <option value="Utilisateur">Utilisateur</option>
-                            <option value="Administrateur">Administrateur</option>
-                            <option value="Premium">Premium</option>
-                        </select>
                     </div>
                     <div className="flex justify-end">
                         <button
@@ -189,6 +165,24 @@ const Modal: React.FC<ModalProps> = ({ isEditMode, user, onClose, onSubmit }) =>
                     </div>
                 </form>
             </div>
+
+            {isImageModalOpen && imagePreview && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60">
+                    <div className="bg-white p-6 rounded-lg max-w-full max-h-full overflow-hidden">
+                        <button
+                            className="absolute top-2 right-2 text-white text-2xl"
+                            onClick={closeImageModal}
+                        >
+                            &times;
+                        </button>
+                        <img
+                            src={imagePreview}
+                            alt="Profile Preview"
+                            className="max-w-full max-h-[80vh] object-contain"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
