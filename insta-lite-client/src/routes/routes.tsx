@@ -28,7 +28,7 @@ const AppRoutes = ()=> (
             path="/portfolio/public"
             element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_USER', 'ROLE_PREMIUM']}>
-                    <ProfilePage />
+                    <PublicPortfolio />
                 </ProtectedRoute>
             }
         />
